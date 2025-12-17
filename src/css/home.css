@@ -1,0 +1,75 @@
+/* nanvbar */
+.navabar-color{
+    background-color: #eee;
+}
+
+.texto-menu{
+  color: rgb(242, 245, 244)!important;
+}
+
+/* carrusel */
+.carousel-container {
+  position: relative;
+  margin-bottom: 100px;
+}
+
+.carouselApp {
+  height: 500px;
+  & .carousel-inner {
+    height: 100%;
+    & .carousel-item img {
+      height: 500px;
+      object-fit: cover;
+    }
+  }
+}
+
+.cuidador-overlay {
+  position: absolute;
+  bottom: -160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 10;
+}
+
+.cuidador-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* login */
+
+#boton-vet {
+   background-color: rgb(26, 199, 138);
+    &:hover {
+   background-color:  rgb(26, 199, 138);
+}}
+
+
+.enlace {
+    color: #78C841;
+&:hover {
+    color: #55912e;
+}
+}
+/* // boton del navbar */
+.btn-login{
+
+    background-color: rgb(87, 173, 136);
+    &:hover {
+   background-color:   rgb(59, 180, 161);
+}}
+
+/* Cards hover effect */
+.card-img-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-img-hover {
+  transition: filter 0.3s ease;
+}
+
+.card-hover:hover .card-img-hover {
+  filter: grayscale(100%);
+}
