@@ -57,6 +57,12 @@ const NavBarApp = () => {
                     Gestión de Reservas
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink className="dropdown-item" to="/registro-pasajeros">
+                    <i className="bi bi-person-plus me-2"></i>
+                    Registro de Pasajeros
+                  </NavLink>
+                </li>
               </ul>
             </li>
           </ul>
