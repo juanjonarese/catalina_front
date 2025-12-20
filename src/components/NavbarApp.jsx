@@ -44,7 +44,7 @@ const NavBarApp = () => {
                 <i className="bi bi-shield-lock me-1"></i>
                 Administrador
               </a>
-              <ul className="dropdown-menu">
+              <ul className="dropdown-menu dropdown-menu-end">
                 <li>
                   <NavLink className="dropdown-item" to="/admin/habitaciones">
                     <i className="bi bi-door-open me-2"></i>
