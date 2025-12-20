@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Tab, Tabs } from "react-bootstrap";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 import TablaReservas from "../components/TablaReservas";
 import ModalReserva from "../components/ModalReserva";
+import CalendarioDisponibilidad from "../components/CalendarioDisponibilidad";
 
 const GestionReservasScreen = () => {
   const [reservas, setReservas] = useState([]);
@@ -152,72 +154,99 @@ const GestionReservasScreen = () => {
         </div>
       </div>
 
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Filtrar por Estado</h5>
-              <div className="btn-group" role="group">
-                <button
-                  type="button"
-                  className={`btn ${filtro === "todas" ? "btn-primary" : "btn-outline-primary"}`}
-                  onClick={() => setFiltro("todas")}
-                >
-                  Todas
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
-                  onClick={() => setFiltro("pendiente")}
-                >
-                  Pendientes
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${filtro === "confirmada" ? "btn-success" : "btn-outline-success"}`}
-                  onClick={() => setFiltro("confirmada")}
-                >
-                  Confirmadas
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${filtro === "completada" ? "btn-info" : "btn-outline-info"}`}
-                  onClick={() => setFiltro("completada")}
-                >
-                  Completadas
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${filtro === "cancelada" ? "btn-danger" : "btn-outline-danger"}`}
-                  onClick={() => setFiltro("cancelada")}
-                >
-                  Canceladas
-                </button>
+      <Tabs
+        defaultActiveKey="lista"
+        id="reservas-tabs"
+        className="mb-4"
+        fill
+      >
+        {/* Pestaña de Lista de Reservas */}
+        <Tab eventKey="lista" title={<><i className="bi bi-list-ul me-2"></i>Lista de Reservas</>}>
+          <div className="row mb-4">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-body">
+                  <h5 className="card-title">Filtrar por Estado</h5>
+                  <div className="btn-group" role="group">
+                    <button
+                      type="button"
+                      className={`btn ${filtro === "todas" ? "btn-primary" : "btn-outline-primary"}`}
+                      onClick={() => setFiltro("todas")}
+                    >
+                      Todas
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
+                      onClick={() => setFiltro("pendiente")}
+                    >
+                      Pendientes
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filtro === "confirmada" ? "btn-success" : "btn-outline-success"}`}
+                      onClick={() => setFiltro("confirmada")}
+                    >
+                      Confirmadas
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filtro === "completada" ? "btn-info" : "btn-outline-info"}`}
+                      onClick={() => setFiltro("completada")}
+                    >
+                      Completadas
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filtro === "cancelada" ? "btn-danger" : "btn-outline-danger"}`}
+                      onClick={() => setFiltro("cancelada")}
+                    >
+                      Canceladas
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="row">
-        <div className="col-12">
-          {loading ? (
-            <div className="text-center">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
+          <div className="row">
+            <div className="col-12">
+              {loading ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              ) : (
+                <TablaReservas
+                  reservas={reservasFiltradas}
+                  onEditar={handleVerReserva}
+                  onCancelar={handleCancelarReserva}
+                  onCheckIn={handleCheckIn}
+                  onCheckOut={handleCheckOut}
+                />
+              )}
             </div>
-          ) : (
-            <TablaReservas
-              reservas={reservasFiltradas}
-              onEditar={handleVerReserva}
-              onCancelar={handleCancelarReserva}
-              onCheckIn={handleCheckIn}
-              onCheckOut={handleCheckOut}
-            />
-          )}
-        </div>
-      </div>
+          </div>
+        </Tab>
+
+        {/* Pestaña de Calendario */}
+        <Tab eventKey="calendario" title={<><i className="bi bi-calendar3 me-2"></i>Calendario de Disponibilidad</>}>
+          <div className="row">
+            <div className="col-12">
+              {loading ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              ) : (
+                <CalendarioDisponibilidad reservas={reservas} />
+              )}
+            </div>
+          </div>
+        </Tab>
+      </Tabs>
 
       {showModal && (
         <ModalReserva

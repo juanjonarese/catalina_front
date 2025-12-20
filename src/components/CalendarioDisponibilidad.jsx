@@ -1,0 +1,214 @@
+import { useState, useEffect } from 'react';
+import { Button, Badge } from 'react-bootstrap';
+
+const CalendarioDisponibilidad = ({ reservas }) => {
+  const [fechaActual, setFechaActual] = useState(new Date());
+  const [diasMes, setDiasMes] = useState([]);
+  const [coloresHabitaciones, setColoresHabitaciones] = useState({});
+
+  // Colores disponibles para las habitaciones
+  const coloresDisponibles = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+    '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52BE80',
+    '#EC7063', '#5DADE2', '#AF7AC5', '#48C9B0', '#F39C12'
+  ];
+
+  useEffect(() => {
+    // Asignar colores únicos a cada habitación
+    const habitaciones = new Set();
+    reservas.forEach(reserva => {
+      if (reserva.habitacionId?.numero) {
+        habitaciones.add(reserva.habitacionId.numero);
+      }
+    });
+
+    const colores = {};
+    Array.from(habitaciones).forEach((hab, index) => {
+      colores[hab] = coloresDisponibles[index % coloresDisponibles.length];
+    });
+    setColoresHabitaciones(colores);
+  }, [reservas]);
+
+  useEffect(() => {
+    generarDiasMes();
+  }, [fechaActual]);
+
+  const generarDiasMes = () => {
+    const año = fechaActual.getFullYear();
+    const mes = fechaActual.getMonth();
+
+    const primerDia = new Date(año, mes, 1);
+    const ultimoDia = new Date(año, mes + 1, 0);
+    const diasEnMes = ultimoDia.getDate();
+    const primerDiaSemana = primerDia.getDay();
+
+    const dias = [];
+
+    // Días vacíos antes del primer día del mes
+    for (let i = 0; i < primerDiaSemana; i++) {
+      dias.push(null);
+    }
+
+    // Días del mes
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+      dias.push(new Date(año, mes, dia));
+    }
+
+    setDiasMes(dias);
+  };
+
+  const mesAnterior = () => {
+    setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1));
+  };
+
+  const mesSiguiente = () => {
+    setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 1));
+  };
+
+  const mesActual = () => {
+    setFechaActual(new Date());
+  };
+
+  const obtenerReservasPorDia = (fecha) => {
+    if (!fecha) return [];
+
+    return reservas.filter(reserva => {
+      const checkIn = new Date(reserva.fechaCheckIn);
+      const checkOut = new Date(reserva.fechaCheckOut);
+
+      // Normalizar las fechas para comparar solo día/mes/año
+      const fechaNormalizada = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+      const checkInNormalizado = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate());
+      const checkOutNormalizado = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate());
+
+      return fechaNormalizada >= checkInNormalizado && fechaNormalizada <= checkOutNormalizado;
+    });
+  };
+
+  const esDiaActual = (fecha) => {
+    if (!fecha) return false;
+    const hoy = new Date();
+    return fecha.getDate() === hoy.getDate() &&
+           fecha.getMonth() === hoy.getMonth() &&
+           fecha.getFullYear() === hoy.getFullYear();
+  };
+
+  const nombreMes = fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="calendario-disponibilidad">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="text-capitalize mb-0">{nombreMes}</h3>
+        <div>
+          <Button variant="outline-secondary" onClick={mesAnterior} className="me-2">
+            <i className="bi bi-chevron-left"></i> Anterior
+          </Button>
+          <Button variant="outline-primary" onClick={mesActual} className="me-2">
+            Hoy
+          </Button>
+          <Button variant="outline-secondary" onClick={mesSiguiente}>
+            Siguiente <i className="bi bi-chevron-right"></i>
+          </Button>
+        </div>
+      </div>
+
+      {/* Leyenda de colores */}
+      <div className="mb-3 p-3 bg-light rounded">
+        <strong className="me-3">Habitaciones:</strong>
+        {Object.entries(coloresHabitaciones).map(([habitacion, color]) => (
+          <Badge
+            key={habitacion}
+            className="me-2 mb-2"
+            style={{
+              backgroundColor: color,
+              padding: '8px 12px',
+              fontSize: '0.9rem'
+            }}
+          >
+            Hab. {habitacion}
+          </Badge>
+        ))}
+      </div>
+
+      <div className="calendario-grid">
+        {/* Encabezados de días de la semana */}
+        <div className="row g-2 mb-2">
+          {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(dia => (
+            <div key={dia} className="col">
+              <div className="text-center fw-bold text-muted py-2">
+                {dia}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Días del mes */}
+        <div className="row g-2">
+          {diasMes.map((fecha, index) => {
+            const reservasDia = obtenerReservasPorDia(fecha);
+            const esHoy = esDiaActual(fecha);
+
+            return (
+              <div key={index} className="col">
+                <div
+                  className={`dia-calendario ${!fecha ? 'vacio' : ''} ${esHoy ? 'dia-actual' : ''}`}
+                  style={{
+                    minHeight: '120px',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    backgroundColor: esHoy ? '#e3f2fd' : '#fff',
+                    position: 'relative'
+                  }}
+                >
+                  {fecha && (
+                    <>
+                      <div className={`fw-bold mb-2 ${esHoy ? 'text-primary' : 'text-dark'}`}>
+                        {fecha.getDate()}
+                      </div>
+                      <div className="d-flex flex-column gap-1">
+                        {reservasDia.map((reserva, idx) => (
+                          <Badge
+                            key={idx}
+                            className="text-truncate"
+                            style={{
+                              backgroundColor: coloresHabitaciones[reserva.habitacionId?.numero] || '#6c757d',
+                              fontSize: '0.75rem',
+                              padding: '4px 6px',
+                              cursor: 'pointer',
+                              maxWidth: '100%'
+                            }}
+                            title={`Hab. ${reserva.habitacionId?.numero} - ${reserva.nombreCliente}`}
+                          >
+                            Hab. {reserva.habitacionId?.numero}
+                          </Badge>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <style jsx>{`
+        .calendario-grid {
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .dia-calendario.vacio {
+          background-color: #f8f9fa !important;
+        }
+        .dia-actual {
+          border: 2px solid #0d6efd !important;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default CalendarioDisponibilidad;
