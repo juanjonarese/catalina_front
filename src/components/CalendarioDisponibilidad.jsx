@@ -4,30 +4,14 @@ import { Button, Badge } from 'react-bootstrap';
 const CalendarioDisponibilidad = ({ reservas }) => {
   const [fechaActual, setFechaActual] = useState(new Date());
   const [diasMes, setDiasMes] = useState([]);
-  const [coloresHabitaciones, setColoresHabitaciones] = useState({});
 
-  // Colores vibrantes y claros para las habitaciones
-  const coloresDisponibles = [
-    '#FF5733', '#33FF57', '#3357FF', '#FF33F5', '#33FFF5',
-    '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C', '#FF3333',
-    '#33FFD7', '#FFD733', '#D733FF', '#33D7FF', '#FF33A8'
-  ];
-
-  useEffect(() => {
-    // Asignar colores únicos a cada habitación
-    const habitaciones = new Set();
-    reservas.forEach(reserva => {
-      if (reserva.habitacionId?.numero) {
-        habitaciones.add(reserva.habitacionId.numero);
-      }
-    });
-
-    const colores = {};
-    Array.from(habitaciones).forEach((hab, index) => {
-      colores[hab] = coloresDisponibles[index % coloresDisponibles.length];
-    });
-    setColoresHabitaciones(colores);
-  }, [reservas]);
+  // Colores por estado de reserva
+  const coloresPorEstado = {
+    'pendiente': '#3357FF',      // Azul
+    'confirmada': '#FF3333',     // Rojo
+    'completada': '#33FF57',     // Verde
+    'cancelada': '#999999'       // Gris
+  };
 
   useEffect(() => {
     generarDiasMes();
@@ -112,26 +96,65 @@ const CalendarioDisponibilidad = ({ reservas }) => {
         </div>
       </div>
 
-      {/* Leyenda de colores */}
+      {/* Leyenda de colores por estado */}
       <div className="mb-3 p-3 bg-light rounded">
-        <strong className="me-3">Habitaciones:</strong>
-        {Object.entries(coloresHabitaciones).map(([habitacion, color]) => (
-          <Badge
-            key={habitacion}
-            className="me-2 mb-2"
-            style={{
-              backgroundColor: color,
-              padding: '10px 16px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              border: '2px solid rgba(0,0,0,0.2)',
-              color: '#fff',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-            }}
-          >
-            Room {habitacion}
-          </Badge>
-        ))}
+        <strong className="me-3">Estado de Reservas:</strong>
+        <Badge
+          className="me-2 mb-2"
+          style={{
+            backgroundColor: coloresPorEstado.pendiente,
+            padding: '10px 16px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: '2px solid rgba(0,0,0,0.2)',
+            color: '#fff',
+            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+          }}
+        >
+          Pendiente
+        </Badge>
+        <Badge
+          className="me-2 mb-2"
+          style={{
+            backgroundColor: coloresPorEstado.confirmada,
+            padding: '10px 16px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: '2px solid rgba(0,0,0,0.2)',
+            color: '#fff',
+            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+          }}
+        >
+          Confirmada
+        </Badge>
+        <Badge
+          className="me-2 mb-2"
+          style={{
+            backgroundColor: coloresPorEstado.completada,
+            padding: '10px 16px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: '2px solid rgba(0,0,0,0.2)',
+            color: '#fff',
+            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+          }}
+        >
+          Completada
+        </Badge>
+        <Badge
+          className="me-2 mb-2"
+          style={{
+            backgroundColor: coloresPorEstado.cancelada,
+            padding: '10px 16px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: '2px solid rgba(0,0,0,0.2)',
+            color: '#fff',
+            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+          }}
+        >
+          Cancelada
+        </Badge>
       </div>
 
       <div className="calendario-grid">
@@ -176,7 +199,7 @@ const CalendarioDisponibilidad = ({ reservas }) => {
                             key={idx}
                             className="text-truncate"
                             style={{
-                              backgroundColor: coloresHabitaciones[reserva.habitacionId?.numero] || '#6c757d',
+                              backgroundColor: coloresPorEstado[reserva.estado] || '#6c757d',
                               fontSize: '0.85rem',
                               padding: '6px 10px',
                               cursor: 'pointer',
@@ -187,7 +210,7 @@ const CalendarioDisponibilidad = ({ reservas }) => {
                               textShadow: '1px 1px 2px rgba(0,0,0,0.4)',
                               boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
                             }}
-                            title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente}`}
+                            title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente} - ${reserva.estado}`}
                           >
                             Room {reserva.habitacionId?.numero}
                           </Badge>
