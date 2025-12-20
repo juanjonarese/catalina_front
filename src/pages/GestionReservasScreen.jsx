@@ -11,6 +11,8 @@ const GestionReservasScreen = () => {
   const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [filtro, setFiltro] = useState("todas");
+  const [filtroFecha, setFiltroFecha] = useState("");
+  const [filtroHabitacion, setFiltroHabitacion] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -138,10 +140,39 @@ const GestionReservasScreen = () => {
     }
   };
 
+  // Obtener lista única de habitaciones
+  const habitacionesUnicas = [...new Set(reservas.map(r => r.habitacionId?.numero).filter(Boolean))].sort((a, b) => a - b);
+
+  // Aplicar todos los filtros
   const reservasFiltradas = reservas.filter((reserva) => {
-    if (filtro === "todas") return true;
-    return reserva.estado === filtro;
+    // Filtro por estado
+    if (filtro !== "todas" && reserva.estado !== filtro) return false;
+
+    // Filtro por fecha (busca si la fecha está dentro del rango de la reserva)
+    if (filtroFecha) {
+      const fechaBusqueda = new Date(filtroFecha);
+      const checkIn = new Date(reserva.fechaCheckIn);
+      const checkOut = new Date(reserva.fechaCheckOut);
+
+      // Normalizar fechas para comparación solo de día
+      fechaBusqueda.setHours(0, 0, 0, 0);
+      checkIn.setHours(0, 0, 0, 0);
+      checkOut.setHours(0, 0, 0, 0);
+
+      if (fechaBusqueda < checkIn || fechaBusqueda > checkOut) return false;
+    }
+
+    // Filtro por habitación
+    if (filtroHabitacion && reserva.habitacionId?.numero?.toString() !== filtroHabitacion) return false;
+
+    return true;
   });
+
+  const limpiarFiltros = () => {
+    setFiltro("todas");
+    setFiltroFecha("");
+    setFiltroHabitacion("");
+  };
 
   return (
     <div className="container my-5">
@@ -162,47 +193,97 @@ const GestionReservasScreen = () => {
       >
         {/* Pestaña de Lista de Reservas */}
         <Tab eventKey="lista" title={<><i className="bi bi-list-ul me-2"></i>Lista de Reservas</>}>
+          {/* Filtros */}
           <div className="row mb-4">
             <div className="col-12">
               <div className="card">
                 <div className="card-body">
-                  <h5 className="card-title">Filtrar por Estado</h5>
-                  <div className="btn-group" role="group">
-                    <button
-                      type="button"
-                      className={`btn ${filtro === "todas" ? "btn-primary" : "btn-outline-primary"}`}
-                      onClick={() => setFiltro("todas")}
-                    >
-                      Todas
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="card-title mb-0">Filtros</h5>
+                    <button className="btn btn-sm btn-outline-secondary" onClick={limpiarFiltros}>
+                      <i className="bi bi-x-circle me-1"></i>
+                      Limpiar Filtros
                     </button>
-                    <button
-                      type="button"
-                      className={`btn ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
-                      onClick={() => setFiltro("pendiente")}
-                    >
-                      Pendientes
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filtro === "confirmada" ? "btn-success" : "btn-outline-success"}`}
-                      onClick={() => setFiltro("confirmada")}
-                    >
-                      Confirmadas
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filtro === "completada" ? "btn-info" : "btn-outline-info"}`}
-                      onClick={() => setFiltro("completada")}
-                    >
-                      Completadas
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filtro === "cancelada" ? "btn-danger" : "btn-outline-danger"}`}
-                      onClick={() => setFiltro("cancelada")}
-                    >
-                      Canceladas
-                    </button>
+                  </div>
+
+                  {/* Filtro por Estado */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Por Estado:</label>
+                    <div className="btn-group d-flex flex-wrap" role="group">
+                      <button
+                        type="button"
+                        className={`btn ${filtro === "todas" ? "btn-primary" : "btn-outline-primary"}`}
+                        onClick={() => setFiltro("todas")}
+                      >
+                        Todas
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
+                        onClick={() => setFiltro("pendiente")}
+                      >
+                        Pendientes
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtro === "confirmada" ? "btn-success" : "btn-outline-success"}`}
+                        onClick={() => setFiltro("confirmada")}
+                      >
+                        Confirmadas
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtro === "completada" ? "btn-info" : "btn-outline-info"}`}
+                        onClick={() => setFiltro("completada")}
+                      >
+                        Completadas
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtro === "cancelada" ? "btn-danger" : "btn-outline-danger"}`}
+                        onClick={() => setFiltro("cancelada")}
+                      >
+                        Canceladas
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filtros por Fecha y Habitación */}
+                  <div className="row">
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Por Fecha:</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={filtroFecha}
+                        onChange={(e) => setFiltroFecha(e.target.value)}
+                        placeholder="Seleccione una fecha"
+                      />
+                      <small className="text-muted">Muestra reservas activas en la fecha seleccionada</small>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Por Habitación:</label>
+                      <select
+                        className="form-select"
+                        value={filtroHabitacion}
+                        onChange={(e) => setFiltroHabitacion(e.target.value)}
+                      >
+                        <option value="">Todas las habitaciones</option>
+                        {habitacionesUnicas.map((numero) => (
+                          <option key={numero} value={numero}>
+                            Room {numero}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Contador de resultados */}
+                  <div className="mt-3 text-end">
+                    <small className="text-muted">
+                      Mostrando <strong>{reservasFiltradas.length}</strong> de <strong>{reservas.length}</strong> reservas
+                    </small>
                   </div>
                 </div>
               </div>
