@@ -6,11 +6,11 @@ const CalendarioDisponibilidad = ({ reservas }) => {
   const [diasMes, setDiasMes] = useState([]);
   const [coloresHabitaciones, setColoresHabitaciones] = useState({});
 
-  // Colores disponibles para las habitaciones
+  // Colores vibrantes y claros para las habitaciones
   const coloresDisponibles = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-    '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52BE80',
-    '#EC7063', '#5DADE2', '#AF7AC5', '#48C9B0', '#F39C12'
+    '#FF5733', '#33FF57', '#3357FF', '#FF33F5', '#33FFF5',
+    '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C', '#FF3333',
+    '#33FFD7', '#FFD733', '#D733FF', '#33D7FF', '#FF33A8'
   ];
 
   useEffect(() => {
@@ -121,11 +121,15 @@ const CalendarioDisponibilidad = ({ reservas }) => {
             className="me-2 mb-2"
             style={{
               backgroundColor: color,
-              padding: '8px 12px',
-              fontSize: '0.9rem'
+              padding: '10px 16px',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              border: '2px solid rgba(0,0,0,0.2)',
+              color: '#fff',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
             }}
           >
-            Hab. {habitacion}
+            Room {habitacion}
           </Badge>
         ))}
       </div>
@@ -166,21 +170,26 @@ const CalendarioDisponibilidad = ({ reservas }) => {
                       <div className={`fw-bold mb-2 ${esHoy ? 'text-primary' : 'text-dark'}`}>
                         {fecha.getDate()}
                       </div>
-                      <div className="d-flex flex-column gap-1">
+                      <div className="d-flex flex-column gap-2">
                         {reservasDia.map((reserva, idx) => (
                           <Badge
                             key={idx}
                             className="text-truncate"
                             style={{
                               backgroundColor: coloresHabitaciones[reserva.habitacionId?.numero] || '#6c757d',
-                              fontSize: '0.75rem',
-                              padding: '4px 6px',
+                              fontSize: '0.85rem',
+                              padding: '6px 10px',
                               cursor: 'pointer',
-                              maxWidth: '100%'
+                              maxWidth: '100%',
+                              fontWeight: 'bold',
+                              border: '2px solid rgba(0,0,0,0.2)',
+                              color: '#fff',
+                              textShadow: '1px 1px 2px rgba(0,0,0,0.4)',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
                             }}
-                            title={`Hab. ${reserva.habitacionId?.numero} - ${reserva.nombreCliente}`}
+                            title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente}`}
                           >
-                            Hab. {reserva.habitacionId?.numero}
+                            Room {reserva.habitacionId?.numero}
                           </Badge>
                         ))}
                       </div>
