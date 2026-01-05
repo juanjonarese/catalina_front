@@ -5,6 +5,7 @@ import clientAxios from "../helpers/clientAxios";
 
 const ModalHabitacion = ({ show, onHide, habitacion, onGuardar }) => {
   const [formData, setFormData] = useState({
+    numero: "",
     titulo: "",
     descripcion: "",
     capacidadPersonas: 1,
@@ -22,6 +23,7 @@ const ModalHabitacion = ({ show, onHide, habitacion, onGuardar }) => {
   useEffect(() => {
     if (habitacion) {
       setFormData({
+        numero: habitacion.numero || "",
         titulo: habitacion.titulo || "",
         descripcion: habitacion.descripcion || "",
         capacidadPersonas: habitacion.capacidadPersonas || 1,
@@ -122,7 +124,25 @@ const ModalHabitacion = ({ show, onHide, habitacion, onGuardar }) => {
       <Modal.Body>
         <form onSubmit={handleSubmit}>
           <div className="row g-3">
-            <div className="col-12">
+            <div className="col-md-3">
+              <label className="form-label">Número de Habitación *</label>
+              <input
+                type="number"
+                className="form-control"
+                name="numero"
+                value={formData.numero}
+                onChange={handleChange}
+                required
+                min="1"
+                placeholder="101"
+                disabled={!!habitacion}
+              />
+              {habitacion && (
+                <small className="text-muted">El número no se puede cambiar una vez creada</small>
+              )}
+            </div>
+
+            <div className="col-md-9">
               <label className="form-label">Título *</label>
               <input
                 type="text"

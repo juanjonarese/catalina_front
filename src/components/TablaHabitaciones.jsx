@@ -4,6 +4,7 @@ const TablaHabitaciones = ({ habitaciones, onEditar, onEliminar, onToggleDisponi
       <table className="table table-hover table-striped">
         <thead className="table-dark">
           <tr>
+            <th>Número</th>
             <th>Imagen</th>
             <th>Título</th>
             <th>Descripción</th>
@@ -17,6 +18,11 @@ const TablaHabitaciones = ({ habitaciones, onEditar, onEliminar, onToggleDisponi
         <tbody>
           {habitaciones.map((habitacion) => (
             <tr key={habitacion._id}>
+              <td>
+                <strong className="text-primary" style={{ fontSize: '1.1rem' }}>
+                  Room {habitacion.numero}
+                </strong>
+              </td>
               <td>
                 {habitacion.imagenes && habitacion.imagenes.length > 0 ? (
                   <img

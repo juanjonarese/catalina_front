@@ -3,7 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 
-const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal }) => {
+const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal, onReservaExitosa }) => {
   const [formData, setFormData] = useState({
     nombreCliente: "",
     emailCliente: "",
@@ -24,40 +24,52 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal 
     setLoading(true);
 
     try {
-      const reservaData = {
-        ...formData,
+      // Datos para crear la preferencia de pago
+      const pagoData = {
+        nombreCliente: formData.nombreCliente,
+        emailCliente: formData.emailCliente,
+        telefonoCliente: formData.telefonoCliente,
         habitacionId: habitacion._id,
-        fechaCheckIn: criterios.fechaCheckIn,
-        fechaCheckOut: criterios.fechaCheckOut,
         numAdultos: criterios.numAdultos,
         numNinos: criterios.numNinos,
+        fechaCheckIn: criterios.fechaCheckIn,
+        fechaCheckOut: criterios.fechaCheckOut,
         precioTotal: precioTotal,
+        tituloHabitacion: habitacion.titulo,
+        numeroHabitacion: habitacion.numero,
       };
 
-      await clientAxios.post("/reservas", reservaData);
+      // Crear preferencia de pago en MercadoPago
+      const response = await clientAxios.post("/pagos/crear-preferencia", pagoData);
 
-      Swal.fire({
-        icon: "success",
-        title: "¡Reserva Exitosa!",
+      // Mostrar mensaje informativo antes de redirigir
+      await Swal.fire({
+        icon: "info",
+        title: "Redirigiendo a Pago",
         html: `
-          <p>Tu reserva ha sido creada exitosamente.</p>
+          <p>Serás redirigido a MercadoPago para completar el pago.</p>
           <p><strong>Habitación:</strong> ${habitacion.titulo}</p>
-          <p><strong>Check-in:</strong> ${new Date(criterios.fechaCheckIn).toLocaleDateString("es-ES")}</p>
-          <p><strong>Check-out:</strong> ${new Date(criterios.fechaCheckOut).toLocaleDateString("es-ES")}</p>
-          <p><strong>Total:</strong> $${precioTotal}</p>
+          <p><strong>Total a pagar:</strong> $${precioTotal}</p>
+          <p class="mt-3 text-muted"><small>Una vez completado el pago, recibirás un email con la confirmación de tu reserva.</small></p>
         `,
-        confirmButtonText: "Aceptar",
+        confirmButtonText: "Ir a Pagar",
+        showCancelButton: true,
+        cancelButtonText: "Cancelar",
       });
 
-      onHide();
+      // Redirigir a la página de pago de MercadoPago
+      // En producción usar: response.data.initPoint
+      // En desarrollo/pruebas usar: response.data.sandboxInitPoint
+      const paymentUrl = response.data.sandboxInitPoint || response.data.initPoint;
+      window.location.href = paymentUrl;
+
     } catch (error) {
-      console.error("Error al crear reserva:", error);
+      console.error("Error al crear preferencia de pago:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.response?.data?.msg || "Error al crear la reserva",
+        text: error.response?.data?.msg || "Error al procesar el pago",
       });
-    } finally {
       setLoading(false);
     }
   };

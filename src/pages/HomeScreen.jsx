@@ -7,6 +7,7 @@ const HomeScreen = () => {
   const [habitacionesDisponibles, setHabitacionesDisponibles] = useState([]);
   const [criteriosBusqueda, setCriteriosBusqueda] = useState(null);
   const [buscando, setBuscando] = useState(false);
+  const [limpiarBusqueda, setLimpiarBusqueda] = useState(0); // Contador para forzar limpieza
 
   const handleBuscar = (habitaciones, criterios) => {
     setHabitacionesDisponibles(habitaciones);
@@ -16,6 +17,13 @@ const HomeScreen = () => {
 
   const handleBuscando = (estado) => {
     setBuscando(estado);
+  };
+
+  const handleLimpiarTodo = () => {
+    setHabitacionesDisponibles([]);
+    setCriteriosBusqueda(null);
+    setBuscando(false);
+    setLimpiarBusqueda(prev => prev + 1); // Incrementar para notificar a BusquedaHabitaciones
   };
 
   return (
@@ -32,6 +40,7 @@ const HomeScreen = () => {
           <BusquedaHabitaciones
             onBuscar={handleBuscar}
             onBuscando={handleBuscando}
+            limpiarTrigger={limpiarBusqueda}
           />
         </div>
       </div>
@@ -53,6 +62,7 @@ const HomeScreen = () => {
             <ListaHabitacionesDisponibles
               habitaciones={habitacionesDisponibles}
               criterios={criteriosBusqueda}
+              onReservaExitosa={handleLimpiarTodo}
             />
           </div>
         </div>

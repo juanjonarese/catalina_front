@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Button, Badge } from 'react-bootstrap';
 
-const CalendarioDisponibilidad = ({ reservas }) => {
+const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
   const [fechaActual, setFechaActual] = useState(new Date());
   const [diasMes, setDiasMes] = useState([]);
 
   // Colores por estado de reserva
   const coloresPorEstado = {
-    'pendiente': '#3357FF',      // Azul
-    'confirmada': '#FF3333',     // Rojo
-    'completada': '#33FF57',     // Verde
-    'cancelada': '#999999'       // Gris
+    'pendiente': '#FFC107',      // Amarillo - Reserva pendiente
+    'confirmada': '#28A745',     // Verde - Reserva confirmada
+    'completada': '#33FF57',     // Verde (no se muestra)
+    'cancelada': '#999999'       // Gris (no se muestra)
   };
 
   useEffect(() => {
@@ -57,6 +57,11 @@ const CalendarioDisponibilidad = ({ reservas }) => {
     if (!fecha) return [];
 
     return reservas.filter(reserva => {
+      // Excluir reservas canceladas y completadas (checkout) - habitaciones disponibles
+      if (reserva.estado === 'cancelada' || reserva.estado === 'completada') {
+        return false;
+      }
+
       const checkIn = new Date(reserva.fechaCheckIn);
       const checkOut = new Date(reserva.fechaCheckOut);
 
@@ -85,76 +90,53 @@ const CalendarioDisponibilidad = ({ reservas }) => {
         <h3 className="text-capitalize mb-0">{nombreMes}</h3>
         <div>
           <Button variant="outline-secondary" onClick={mesAnterior} className="me-2">
-            <i className="bi bi-chevron-left"></i> Anterior
+            <i className="bi bi-chevron-left"></i> Mes Anterior
           </Button>
           <Button variant="outline-primary" onClick={mesActual} className="me-2">
             Hoy
           </Button>
           <Button variant="outline-secondary" onClick={mesSiguiente}>
-            Siguiente <i className="bi bi-chevron-right"></i>
+            Mes Siguiente <i className="bi bi-chevron-right"></i>
           </Button>
         </div>
       </div>
 
-      {/* Leyenda de colores por estado */}
+      {/* Aclaración del calendario */}
       <div className="mb-3 p-3 bg-light rounded">
-        <strong className="me-3">Estado de Reservas:</strong>
-        <Badge
-          className="me-2 mb-2"
-          style={{
-            backgroundColor: coloresPorEstado.pendiente,
-            padding: '10px 16px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: '2px solid rgba(0,0,0,0.2)',
-            color: '#fff',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-          }}
-        >
-          Pendiente
-        </Badge>
-        <Badge
-          className="me-2 mb-2"
-          style={{
-            backgroundColor: coloresPorEstado.confirmada,
-            padding: '10px 16px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: '2px solid rgba(0,0,0,0.2)',
-            color: '#fff',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-          }}
-        >
-          Confirmada
-        </Badge>
-        <Badge
-          className="me-2 mb-2"
-          style={{
-            backgroundColor: coloresPorEstado.completada,
-            padding: '10px 16px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: '2px solid rgba(0,0,0,0.2)',
-            color: '#fff',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-          }}
-        >
-          Completada
-        </Badge>
-        <Badge
-          className="me-2 mb-2"
-          style={{
-            backgroundColor: coloresPorEstado.cancelada,
-            padding: '10px 16px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: '2px solid rgba(0,0,0,0.2)',
-            color: '#fff',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-          }}
-        >
-          Cancelada
-        </Badge>
+        <div className="d-flex flex-column gap-2">
+          <div>
+            <i className="bi bi-info-circle me-2 text-primary"></i>
+            <strong>Solo se muestran habitaciones con reservas activas (confirmadas o pendientes)</strong>
+          </div>
+          <div className="d-flex align-items-center gap-3 ms-4">
+            <div className="d-flex align-items-center gap-2">
+              <div
+                style={{
+                  backgroundColor: '#FFC107',
+                  width: '80px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(0,0,0,0.2)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                }}
+              ></div>
+              <span>= Reserva Pendiente</span>
+            </div>
+            <div className="d-flex align-items-center gap-2">
+              <div
+                style={{
+                  backgroundColor: '#28A745',
+                  width: '80px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(0,0,0,0.2)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                }}
+              ></div>
+              <span>= Reserva Confirmada</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="calendario-grid">
@@ -194,27 +176,43 @@ const CalendarioDisponibilidad = ({ reservas }) => {
                         {fecha.getDate()}
                       </div>
                       <div className="d-flex flex-column gap-2">
-                        {reservasDia.map((reserva, idx) => (
-                          <Badge
-                            key={idx}
-                            className="text-truncate"
-                            style={{
-                              backgroundColor: coloresPorEstado[reserva.estado] || '#6c757d',
-                              fontSize: '0.85rem',
-                              padding: '6px 10px',
-                              cursor: 'pointer',
-                              maxWidth: '100%',
-                              fontWeight: 'bold',
-                              border: '2px solid rgba(0,0,0,0.2)',
-                              color: '#fff',
-                              textShadow: '1px 1px 2px rgba(0,0,0,0.4)',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-                            }}
-                            title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente} - ${reserva.estado}`}
-                          >
-                            Room {reserva.habitacionId?.numero}
-                          </Badge>
-                        ))}
+                        {reservasDia.map((reserva, idx) => {
+                          const esAmarillo = reserva.estado === 'pendiente';
+                          const colorFondo = coloresPorEstado[reserva.estado] || '#6c757d';
+                          return (
+                            <div
+                              key={idx}
+                              className="text-truncate"
+                              onClick={() => onVerReserva && onVerReserva(reserva)}
+                              style={{
+                                backgroundColor: colorFondo,
+                                fontSize: '0.85rem',
+                                padding: '6px 10px',
+                                cursor: 'pointer',
+                                maxWidth: '100%',
+                                fontWeight: 'bold',
+                                border: '2px solid rgba(0,0,0,0.2)',
+                                color: esAmarillo ? '#000' : '#fff',
+                                textShadow: esAmarillo ? 'none' : '1px 1px 2px rgba(0,0,0,0.4)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                                borderRadius: '6px',
+                                textAlign: 'center',
+                                transition: 'transform 0.2s, box-shadow 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.25)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+                              }}
+                              title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente} - ${reserva.estado}`}
+                            >
+                              Room {reserva.habitacionId?.numero}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}

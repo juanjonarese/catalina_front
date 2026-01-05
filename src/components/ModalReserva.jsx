@@ -130,6 +130,24 @@ const ModalReserva = ({ show, onHide, reserva, onGuardar }) => {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {reserva && reserva.codigoReserva && (
+          <div className="alert alert-info d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <strong>Código de Reserva:</strong>
+            </div>
+            <span
+              className="badge bg-primary"
+              style={{
+                fontSize: '1.1rem',
+                padding: '10px 15px',
+                letterSpacing: '2px',
+                fontWeight: 'bold'
+              }}
+            >
+              {reserva.codigoReserva}
+            </span>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <h5 className="mb-3">Información del Cliente</h5>
           <div className="row g-3 mb-4">

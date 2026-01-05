@@ -1,4 +1,4 @@
-const TablaReservas = ({ reservas, onEditar, onCancelar, onCheckIn, onCheckOut }) => {
+const TablaReservas = ({ reservas, onEditar, onCancelar, onCheckIn, onCheckOut, onEliminar }) => {
   const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString("es-ES");
   };
@@ -34,6 +34,7 @@ const TablaReservas = ({ reservas, onEditar, onCancelar, onCheckIn, onCheckOut }
       <table className="table table-hover table-striped">
         <thead className="table-dark">
           <tr>
+            <th>Código</th>
             <th>Habitación</th>
             <th>Cliente</th>
             <th>Check-In</th>
@@ -48,6 +49,19 @@ const TablaReservas = ({ reservas, onEditar, onCancelar, onCheckIn, onCheckOut }
         <tbody>
           {reservas.map((reserva) => (
             <tr key={reserva._id}>
+              <td>
+                <span
+                  className="badge bg-primary"
+                  style={{
+                    fontSize: '0.9rem',
+                    padding: '8px 12px',
+                    letterSpacing: '1px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {reserva.codigoReserva || 'N/A'}
+                </span>
+              </td>
               <td>
                 {reserva.habitacionId ? (
                   <>

@@ -14,6 +14,8 @@ const GestionReservasScreen = () => {
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroHabitacion, setFiltroHabitacion] = useState("");
   const [loading, setLoading] = useState(true);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const reservasPorPagina = 10;
 
   useEffect(() => {
     cargarReservas();
@@ -140,6 +142,39 @@ const GestionReservasScreen = () => {
     }
   };
 
+  const handleEliminarReserva = async (id) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar reserva?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await clientAxios.delete(`/reservas/${id}`);
+      Swal.fire({
+        icon: "success",
+        title: "Eliminada",
+        text: "Reserva eliminada exitosamente",
+        timer: 2000,
+      });
+      cargarReservas();
+    } catch (error) {
+      console.error("Error al eliminar reserva:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.msg || "Error al eliminar la reserva",
+      });
+    }
+  };
+
   // Obtener lista única de habitaciones
   const habitacionesUnicas = [...new Set(reservas.map(r => r.habitacionId?.numero).filter(Boolean))].sort((a, b) => a - b);
 
@@ -172,6 +207,18 @@ const GestionReservasScreen = () => {
     setFiltro("todas");
     setFiltroFecha("");
     setFiltroHabitacion("");
+    setPaginaActual(1);
+  };
+
+  // Calcular paginación
+  const indiceUltimo = paginaActual * reservasPorPagina;
+  const indicePrimero = indiceUltimo - reservasPorPagina;
+  const reservasPaginadas = reservasFiltradas.slice(indicePrimero, indiceUltimo);
+  const totalPaginas = Math.ceil(reservasFiltradas.length / reservasPorPagina);
+
+  const cambiarPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -299,13 +346,82 @@ const GestionReservasScreen = () => {
                   </div>
                 </div>
               ) : (
-                <TablaReservas
-                  reservas={reservasFiltradas}
-                  onEditar={handleVerReserva}
-                  onCancelar={handleCancelarReserva}
-                  onCheckIn={handleCheckIn}
-                  onCheckOut={handleCheckOut}
-                />
+                <>
+                  <TablaReservas
+                    reservas={reservasPaginadas}
+                    onEditar={handleVerReserva}
+                    onCancelar={handleCancelarReserva}
+                    onCheckIn={handleCheckIn}
+                    onCheckOut={handleCheckOut}
+                    onEliminar={handleEliminarReserva}
+                  />
+
+                  {/* Paginador */}
+                  {totalPaginas > 1 && (
+                    <div className="d-flex justify-content-center align-items-center mt-4">
+                      <nav>
+                        <ul className="pagination mb-0">
+                          <li className={`page-item ${paginaActual === 1 ? 'disabled' : ''}`}>
+                            <button
+                              className="page-link"
+                              onClick={() => cambiarPagina(paginaActual - 1)}
+                              disabled={paginaActual === 1}
+                            >
+                              Anterior
+                            </button>
+                          </li>
+
+                          {[...Array(totalPaginas)].map((_, index) => {
+                            const numeroPagina = index + 1;
+                            // Mostrar solo 5 páginas alrededor de la página actual
+                            if (
+                              numeroPagina === 1 ||
+                              numeroPagina === totalPaginas ||
+                              (numeroPagina >= paginaActual - 2 && numeroPagina <= paginaActual + 2)
+                            ) {
+                              return (
+                                <li
+                                  key={numeroPagina}
+                                  className={`page-item ${paginaActual === numeroPagina ? 'active' : ''}`}
+                                >
+                                  <button
+                                    className="page-link"
+                                    onClick={() => cambiarPagina(numeroPagina)}
+                                  >
+                                    {numeroPagina}
+                                  </button>
+                                </li>
+                              );
+                            } else if (
+                              numeroPagina === paginaActual - 3 ||
+                              numeroPagina === paginaActual + 3
+                            ) {
+                              return (
+                                <li key={numeroPagina} className="page-item disabled">
+                                  <span className="page-link">...</span>
+                                </li>
+                              );
+                            }
+                            return null;
+                          })}
+
+                          <li className={`page-item ${paginaActual === totalPaginas ? 'disabled' : ''}`}>
+                            <button
+                              className="page-link"
+                              onClick={() => cambiarPagina(paginaActual + 1)}
+                              disabled={paginaActual === totalPaginas}
+                            >
+                              Siguiente
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                      <div className="ms-3 text-muted">
+                        Página {paginaActual} de {totalPaginas}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -322,7 +438,10 @@ const GestionReservasScreen = () => {
                   </div>
                 </div>
               ) : (
-                <CalendarioDisponibilidad reservas={reservas} />
+                <CalendarioDisponibilidad
+                  reservas={reservas}
+                  onVerReserva={handleVerReserva}
+                />
               )}
             </div>
           </div>

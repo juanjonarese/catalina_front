@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ModalReservaCliente from "./ModalReservaCliente";
 
-const ListaHabitacionesDisponibles = ({ habitaciones, criterios }) => {
+const ListaHabitacionesDisponibles = ({ habitaciones, criterios, onReservaExitosa }) => {
   const [habitacionSeleccionada, setHabitacionSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -134,6 +134,7 @@ const ListaHabitacionesDisponibles = ({ habitaciones, criterios }) => {
           habitacion={habitacionSeleccionada}
           criterios={criterios}
           precioTotal={calcularPrecioTotal(habitacionSeleccionada)}
+          onReservaExitosa={onReservaExitosa}
         />
       )}
     </>

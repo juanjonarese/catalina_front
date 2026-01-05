@@ -1,12 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 
-const BusquedaHabitaciones = ({ onBuscar, onBuscando }) => {
-  const [fechaEntrada, setFechaEntrada] = useState("");
-  const [fechaSalida, setFechaSalida] = useState("");
+const BusquedaHabitaciones = ({ onBuscar, onBuscando, limpiarTrigger }) => {
+  // Obtener fecha de hoy
+  const obtenerFechaHoy = () => {
+    const hoy = new Date();
+    return hoy.toISOString().split('T')[0];
+  };
+
+  // Obtener fecha de mañana
+  const obtenerFechaManana = () => {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    return manana.toISOString().split('T')[0];
+  };
+
+  const [fechaEntrada, setFechaEntrada] = useState(obtenerFechaHoy());
+  const [fechaSalida, setFechaSalida] = useState(obtenerFechaManana());
   const [numAdultos, setNumAdultos] = useState(1);
   const [numNinos, setNumNinos] = useState(0);
+
+  // Limpiar formulario cuando se confirma una reserva
+  useEffect(() => {
+    if (limpiarTrigger > 0) {
+      setFechaEntrada(obtenerFechaHoy());
+      setFechaSalida(obtenerFechaManana());
+      setNumAdultos(1);
+      setNumNinos(0);
+    }
+  }, [limpiarTrigger]);
 
   const handleBuscar = async (e) => {
     e.preventDefault();
@@ -68,10 +91,6 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando }) => {
     }
   };
 
-  const obtenerFechaMinima = () => {
-    const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
-  };
 
   return (
     <div className="card shadow-lg">
@@ -89,7 +108,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando }) => {
                 id="fechaEntrada"
                 value={fechaEntrada}
                 onChange={(e) => setFechaEntrada(e.target.value)}
-                min={obtenerFechaMinima()}
+                min={obtenerFechaHoy()}
                 required
               />
             </div>
@@ -104,7 +123,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando }) => {
                 id="fechaSalida"
                 value={fechaSalida}
                 onChange={(e) => setFechaSalida(e.target.value)}
-                min={fechaEntrada || obtenerFechaMinima()}
+                min={fechaEntrada || obtenerFechaHoy()}
                 required
               />
             </div>
