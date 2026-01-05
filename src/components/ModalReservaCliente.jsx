@@ -58,9 +58,13 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
       });
 
       // Redirigir a la página de pago de MercadoPago
-      // En producción usar: response.data.initPoint
-      // En desarrollo/pruebas usar: response.data.sandboxInitPoint
-      const paymentUrl = response.data.sandboxInitPoint || response.data.initPoint;
+      // Con credenciales APP_USR usar init_point (no sandbox_init_point)
+      const paymentUrl = response.data.initPoint;
+
+      if (!paymentUrl) {
+        throw new Error("No se recibió URL de pago de MercadoPago");
+      }
+
       window.location.href = paymentUrl;
 
     } catch (error) {
