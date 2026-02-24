@@ -9,15 +9,7 @@ const RespuestaPagoScreen = () => {
 
   useEffect(() => {
     // Obtener parámetros de la URL
-    const paymentId = searchParams.get("payment_id");
     const status = searchParams.get("status");
-    const merchantOrder = searchParams.get("merchant_order_id");
-
-    console.log("Parámetros de MercadoPago:", {
-      paymentId,
-      status,
-      merchantOrder,
-    });
 
     // Determinar el estado según los parámetros
     if (status === "approved") {
