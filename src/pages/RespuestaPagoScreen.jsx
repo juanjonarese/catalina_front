@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Container, Card, Button, Spinner } from "react-bootstrap";
+import Swal from "sweetalert2";
 
 const RespuestaPagoScreen = () => {
   const [searchParams] = useSearchParams();
@@ -8,8 +9,29 @@ const RespuestaPagoScreen = () => {
   const [estado, setEstado] = useState("loading"); // loading, success, pending, failure
 
   useEffect(() => {
-    // Obtener parámetros de la URL
     const status = searchParams.get("status");
+    const paymentId = searchParams.get("payment_id");
+    const externalRef = searchParams.get("external_reference");
+    const merchantOrderId = searchParams.get("merchant_order_id");
+    const statusDetail = searchParams.get("status_detail");
+    const collectionStatus = searchParams.get("collection_status");
+
+    // Mostrar todos los parámetros que devolvió MercadoPago para debug
+    Swal.fire({
+      title: "🔍 Respuesta de MercadoPago",
+      html: `
+        <div style="text-align:left; font-size:14px;">
+          <p><strong>Status:</strong> ${status || "no recibido"}</p>
+          <p><strong>Payment ID:</strong> ${paymentId || "no recibido"}</p>
+          <p><strong>Status Detail:</strong> ${statusDetail || "no recibido"}</p>
+          <p><strong>Collection Status:</strong> ${collectionStatus || "no recibido"}</p>
+          <p><strong>External Reference:</strong> ${externalRef || "no recibido"}</p>
+          <p><strong>Merchant Order ID:</strong> ${merchantOrderId || "no recibido"}</p>
+        </div>
+      `,
+      icon: status === "approved" ? "success" : status === "pending" ? "warning" : "error",
+      confirmButtonText: "OK",
+    });
 
     // Determinar el estado según los parámetros
     if (status === "approved") {
