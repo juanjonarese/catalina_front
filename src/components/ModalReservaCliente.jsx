@@ -42,26 +42,21 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
       // Crear preferencia de pago en MercadoPago
       const response = await clientAxios.post("/pagos/crear-preferencia", pagoData);
 
-      // Mostrar URLs para debug
-      const initPoint = response.data.initPoint;
-      const sandboxInitPoint = response.data.sandboxInitPoint;
-
       await Swal.fire({
         icon: "info",
-        title: "Debug - URLs de MercadoPago",
+        title: "Redirigiendo a Pago",
         html: `
-          <div style="text-align:left; font-size:12px; word-break:break-all;">
-            <p><strong>init_point:</strong><br/>${initPoint || "null"}</p>
-            <p><strong>sandbox_init_point:</strong><br/>${sandboxInitPoint || "null"}</p>
-            <p><strong>Se usará:</strong><br/>${initPoint || "ninguna"}</p>
-          </div>
+          <p>Serás redirigido a MercadoPago para completar el pago.</p>
+          <p><strong>Habitación:</strong> ${habitacion.titulo}</p>
+          <p><strong>Total a pagar:</strong> $${precioTotal}</p>
+          <p class="mt-3 text-muted"><small>Una vez completado el pago, recibirás un email con la confirmación de tu reserva.</small></p>
         `,
         confirmButtonText: "Ir a Pagar",
         showCancelButton: true,
         cancelButtonText: "Cancelar",
       });
 
-      const paymentUrl = initPoint;
+      const paymentUrl = response.data.sandboxInitPoint || response.data.initPoint;
 
       if (!paymentUrl) {
         throw new Error("No se recibió URL de pago de MercadoPago");
