@@ -56,7 +56,7 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
         cancelButtonText: "Cancelar",
       });
 
-      const paymentUrl = response.data.sandboxInitPoint;
+      const paymentUrl = response.data.initPoint;
 
       if (!paymentUrl) {
         throw new Error("No se recibió URL de pago de MercadoPago");
