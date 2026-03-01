@@ -125,3 +125,29 @@
 .footer {
   background-color: rgb(35, 88, 80);
 }
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 576px) {
+  .overlay h1 {
+    font-size: 24px;
+  }
+  .overlay h1 span {
+    font-size: 28px;
+  }
+  .logo img {
+    height: 40px;
+  }
+  /* Evitar overflow horizontal global */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  .overlay h1 {
+    font-size: 28px;
+  }
+  .overlay h1 span {
+    font-size: 34px;
+  }
+}

@@ -21,15 +21,6 @@ const FormularioRegistroPasajero = ({ onSubmit, pasajeroData = null }) => {
   const [firma, setFirma] = useState(pasajeroData?.firma || null);
 
   const onSubmitForm = (data) => {
-    if (!firma) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Firma requerida',
-        text: 'Por favor, firme en el recuadro antes de continuar',
-      });
-      return;
-    }
-
     const datosCompletos = {
       ...data,
       firma
@@ -228,9 +219,9 @@ const FormularioRegistroPasajero = ({ onSubmit, pasajeroData = null }) => {
           <Row className="mb-4">
             <Col>
               <Form.Group>
-                <Form.Label>Firma Digital *</Form.Label>
+                <Form.Label>Firma Digital (opcional)</Form.Label>
                 <p className="text-muted small mb-2">
-                  Por favor, firme en el recuadro utilizando su dedo o lápiz digital
+                  Puede firmar en el recuadro utilizando su dedo o lápiz digital
                 </p>
                 <SignaturePad
                   onSave={handleFirmaGuardada}

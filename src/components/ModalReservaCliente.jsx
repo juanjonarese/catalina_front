@@ -144,7 +144,7 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal 
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal show={show} onHide={onHide} size="lg" fullscreen="sm-down">
       <Modal.Header closeButton>
         <Modal.Title>Completar Reserva</Modal.Title>
       </Modal.Header>
@@ -226,13 +226,11 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal 
             <Button variant="secondary" type="button" onClick={onHide} disabled={!!loading}>
               Cancelar
             </Button>
+            <Button variant="primary" type="button" onClick={handleReservar} disabled={!!loading}>
+              {loading === "reservar" ? "Reservando..." : "Reservar"}
+            </Button>
             <Button variant="primary" type="button" onClick={handlePagar} disabled={!!loading}>
               {loading === "pagar" ? "Procesando..." : "Pagar ahora"}
-            </Button>
-          </div>
-          <div className="text-center mt-2">
-            <Button variant="link" size="sm" type="button" onClick={handleReservar} disabled={!!loading}>
-              {loading === "reservar" ? "Reservando..." : "Reservar sin pagar"}
             </Button>
           </div>
         </div>

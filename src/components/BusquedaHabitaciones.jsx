@@ -98,7 +98,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando, limpiarTrigger }) => {
         <h3 className="card-title text-center mb-4">Buscar Habitaciones</h3>
         <form onSubmit={handleBuscar}>
           <div className="row g-3">
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <label htmlFor="fechaEntrada" className="form-label fw-bold">
                 Fecha de Entrada
               </label>
@@ -113,7 +113,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando, limpiarTrigger }) => {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <label htmlFor="fechaSalida" className="form-label fw-bold">
                 Fecha de Salida
               </label>
@@ -128,7 +128,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando, limpiarTrigger }) => {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <label htmlFor="numAdultos" className="form-label fw-bold">
                 Adultos
               </label>
@@ -144,7 +144,7 @@ const BusquedaHabitaciones = ({ onBuscar, onBuscando, limpiarTrigger }) => {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <label htmlFor="numNinos" className="form-label fw-bold">
                 Niños
               </label>

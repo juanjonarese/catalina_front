@@ -115,7 +115,7 @@ const ModalHabitacion = ({ show, onHide, habitacion, onGuardar }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal show={show} onHide={onHide} size="lg" fullscreen="sm-down">
       <Modal.Header closeButton>
         <Modal.Title>
           {habitacion ? "Editar Habitación" : "Nueva Habitación"}

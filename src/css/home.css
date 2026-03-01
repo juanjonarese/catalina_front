@@ -73,3 +73,16 @@
 .card-hover:hover .card-img-hover {
   filter: grayscale(100%);
 }
+
+/* ===== RESPONSIVE CAROUSEL ===== */
+@media (max-width: 768px) {
+  .carouselApp {
+    height: 300px;
+  }
+  .carouselApp .carousel-inner .carousel-item img {
+    height: 300px;
+  }
+  .cuidador-overlay {
+    bottom: -200px;
+  }
+}

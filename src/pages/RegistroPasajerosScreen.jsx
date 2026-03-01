@@ -97,7 +97,7 @@ const RegistroPasajerosScreen = () => {
     <Container fluid className="py-4">
       <Row className="mb-4">
         <Col>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
             <h1 className="mb-0">Registro de Pasajeros</h1>
             <Button
               variant="primary"
@@ -191,6 +191,7 @@ const RegistroPasajerosScreen = () => {
         show={showModal}
         onHide={() => setShowModal(false)}
         size="lg"
+        fullscreen="sm-down"
         centered
       >
         <Modal.Header closeButton>

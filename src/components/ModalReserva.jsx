@@ -123,7 +123,7 @@ const ModalReserva = ({ show, onHide, reserva, onGuardar }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal show={show} onHide={onHide} size="lg" fullscreen="sm-down">
       <Modal.Header closeButton>
         <Modal.Title>
           {reserva ? "Editar Reserva" : "Nueva Reserva"}
