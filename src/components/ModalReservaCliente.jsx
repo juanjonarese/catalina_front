@@ -3,13 +3,13 @@ import { Modal, Button } from "react-bootstrap";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 
-const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal, onReservaExitosa }) => {
+const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal }) => {
   const [formData, setFormData] = useState({
     nombreCliente: "",
     emailCliente: "",
     telefonoCliente: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(null); // null | "pagar" | "reservar"
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,12 +19,23 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const validarFormulario = () => {
+    if (!formData.nombreCliente || !formData.emailCliente || !formData.telefonoCliente) {
+      Swal.fire({
+        icon: "warning",
+        title: "Campos incompletos",
+        text: "Por favor completá todos los datos antes de continuar.",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handlePagar = async () => {
+    if (!validarFormulario()) return;
+    setLoading("pagar");
 
     try {
-      // Datos para crear la preferencia de pago
       const pagoData = {
         nombreCliente: formData.nombreCliente,
         emailCliente: formData.emailCliente,
@@ -39,7 +50,6 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
         numeroHabitacion: habitacion.numero,
       };
 
-      // Crear preferencia de pago en MercadoPago
       const response = await clientAxios.post("/pagos/crear-preferencia", pagoData);
 
       await Swal.fire({
@@ -71,7 +81,57 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
         title: "Error",
         text: error.response?.data?.msg || "Error al procesar el pago",
       });
-      setLoading(false);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleReservar = async () => {
+    if (!validarFormulario()) return;
+    setLoading("reservar");
+
+    try {
+      const reservaData = {
+        nombreCliente: formData.nombreCliente,
+        emailCliente: formData.emailCliente,
+        telefonoCliente: formData.telefonoCliente,
+        habitacionId: habitacion._id,
+        numAdultos: criterios.numAdultos,
+        numNinos: criterios.numNinos,
+        fechaCheckIn: criterios.fechaCheckIn,
+        fechaCheckOut: criterios.fechaCheckOut,
+        precioTotal: precioTotal,
+      };
+
+      const response = await clientAxios.post("/reservas", reservaData);
+      const { reserva } = response.data;
+
+      await Swal.fire({
+        icon: "success",
+        title: "¡Reserva Recibida!",
+        html: `
+          <p>Tu reserva fue registrada exitosamente.</p>
+          <p><strong>Código de reserva:</strong></p>
+          <h3 style="color:#1a73e8; letter-spacing:2px">${reserva.codigoReserva}</h3>
+          <p style="font-size:13px; color:#666">
+            Recibirás un email con los detalles.<br/>
+            El hotel se comunicará para confirmar disponibilidad.
+          </p>
+        `,
+        confirmButtonText: "Entendido",
+      });
+
+      onHide();
+
+    } catch (error) {
+      console.error("Error al crear reserva:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.msg || "Error al registrar la reserva",
+      });
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -124,7 +184,7 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <div>
           <h5 className="mb-3">Datos del Cliente</h5>
           <div className="row g-3">
             <div className="col-12">
@@ -135,7 +195,6 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
                 name="nombreCliente"
                 value={formData.nombreCliente}
                 onChange={handleChange}
-                required
                 placeholder="Juan Pérez"
               />
             </div>
@@ -147,7 +206,6 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
                 name="emailCliente"
                 value={formData.emailCliente}
                 onChange={handleChange}
-                required
                 placeholder="juan@ejemplo.com"
               />
             </div>
@@ -159,21 +217,25 @@ const ModalReservaCliente = ({ show, onHide, habitacion, criterios, precioTotal,
                 name="telefonoCliente"
                 value={formData.telefonoCliente}
                 onChange={handleChange}
-                required
                 placeholder="+54 9 11 1234-5678"
               />
             </div>
           </div>
 
           <div className="d-flex justify-content-end gap-2 mt-4">
-            <Button variant="secondary" onClick={onHide} disabled={loading}>
+            <Button variant="secondary" type="button" onClick={onHide} disabled={!!loading}>
               Cancelar
             </Button>
-            <Button variant="primary" type="submit" disabled={loading}>
-              {loading ? "Procesando..." : "Confirmar Reserva"}
+            <Button variant="primary" type="button" onClick={handlePagar} disabled={!!loading}>
+              {loading === "pagar" ? "Procesando..." : "Pagar ahora"}
             </Button>
           </div>
-        </form>
+          <div className="text-center mt-2">
+            <Button variant="link" size="sm" type="button" onClick={handleReservar} disabled={!!loading}>
+              {loading === "reservar" ? "Reservando..." : "Reservar sin pagar"}
+            </Button>
+          </div>
+        </div>
       </Modal.Body>
     </Modal>
   );
