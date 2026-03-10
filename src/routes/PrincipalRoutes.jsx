@@ -5,6 +5,10 @@ import LoginScreen from "../pages/LoginScreen";
 import DashboardScreen from "../pages/DashboardScreen";
 import GestionReservasScreen from "../pages/GestionReservasScreen";
 import GestionHabitacionesScreen from "../pages/GestionHabitacionesScreen";
+import GestionClientesScreen from "../pages/GestionClientesScreen";
+import GestionTarifasScreen from "../pages/GestionTarifasScreen";
+import GestionCuponesScreen from "../pages/GestionCuponesScreen";
+import GestionReportesScreen from "../pages/GestionReportesScreen";
 import RegistroPasajerosScreen from "../pages/RegistroPasajerosScreen";
 import RespuestaPagoScreen from "../pages/RespuestaPagoScreen";
 
@@ -29,6 +33,10 @@ const PrincipalRoutes = () => {
         <Route path="dashboard" element={<DashboardScreen />} />
         <Route path="habitaciones" element={<GestionHabitacionesScreen />} />
         <Route path="reservas" element={<GestionReservasScreen />} />
+        <Route path="clientes" element={<GestionClientesScreen />} />
+        <Route path="tarifas"  element={<GestionTarifasScreen />} />
+        <Route path="cupones"   element={<GestionCuponesScreen />} />
+        <Route path="reportes" element={<GestionReportesScreen />} />
       </Route>
     </Routes>
   );
