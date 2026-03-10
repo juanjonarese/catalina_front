@@ -1,25 +1,28 @@
 import { useState, useEffect } from "react";
-import { Tab, Tabs } from "react-bootstrap";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 import TablaReservas from "../components/TablaReservas";
 import ModalReserva from "../components/ModalReserva";
+import ModalCheckOut from "../components/ModalCheckOut";
 import CalendarioDisponibilidad from "../components/CalendarioDisponibilidad";
 
 const GestionReservasScreen = () => {
   const [reservas, setReservas] = useState([]);
   const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [reservaCheckOut, setReservaCheckOut] = useState(null);
+  const [showModalCheckOut, setShowModalCheckOut] = useState(false);
+  const [loadingCheckOut, setLoadingCheckOut] = useState(false);
+  const [tabActivo, setTabActivo] = useState("lista");
   const [filtro, setFiltro] = useState("todas");
+  const [busqueda, setBusqueda] = useState("");
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroHabitacion, setFiltroHabitacion] = useState("");
   const [loading, setLoading] = useState(true);
   const [paginaActual, setPaginaActual] = useState(1);
   const reservasPorPagina = 10;
 
-  useEffect(() => {
-    cargarReservas();
-  }, []);
+  useEffect(() => { cargarReservas(); }, []);
 
   const cargarReservas = async () => {
     try {
@@ -28,426 +31,338 @@ const GestionReservasScreen = () => {
       setReservas(data.reservas);
     } catch (error) {
       console.error("Error al cargar reservas:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error al cargar las reservas",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Error al cargar las reservas" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerReserva = (reserva) => {
-    setReservaSeleccionada(reserva);
-    setShowModal(true);
-  };
+  const handleVerReserva = (reserva) => { setReservaSeleccionada(reserva); setShowModal(true); };
 
   const handleCancelarReserva = async (id) => {
     const result = await Swal.fire({
-      title: "¿Cancelar reserva?",
-      text: "Esta acción no se puede deshacer",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Sí, cancelar",
-      cancelButtonText: "No",
+      title: "¿Cancelar reserva?", text: "Esta acción no se puede deshacer",
+      icon: "warning", showCancelButton: true,
+      confirmButtonColor: "#C0392B", cancelButtonColor: "#948A7C",
+      confirmButtonText: "Sí, cancelar", cancelButtonText: "No",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       await clientAxios.put(`/reservas/${id}/cancelar`);
-      Swal.fire({
-        icon: "success",
-        title: "Cancelada",
-        text: "Reserva cancelada exitosamente",
-        timer: 2000,
-      });
+      Swal.fire({ icon: "success", title: "Cancelada", text: "Reserva cancelada exitosamente", timer: 2000 });
       cargarReservas();
     } catch (error) {
-      console.error("Error al cancelar reserva:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error al cancelar la reserva",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Error al cancelar la reserva" });
     }
   };
 
   const handleCheckIn = async (id) => {
     const result = await Swal.fire({
-      title: "¿Realizar Check-In?",
-      text: "Confirmar entrada del huésped",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#28a745",
-      cancelButtonColor: "#6c757d",
-      confirmButtonText: "Sí, check-in",
-      cancelButtonText: "Cancelar",
+      title: "¿Realizar Check-In?", text: "Confirmar entrada del huésped",
+      icon: "question", showCancelButton: true,
+      confirmButtonColor: "#4A7C59", cancelButtonColor: "#948A7C",
+      confirmButtonText: "Sí, check-in", cancelButtonText: "Cancelar",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       await clientAxios.put(`/reservas/${id}/estado`, { estado: "confirmada" });
-      Swal.fire({
-        icon: "success",
-        title: "Check-In Realizado",
-        text: "Check-in realizado exitosamente",
-        timer: 2000,
-      });
+      Swal.fire({ icon: "success", title: "Check-In Realizado", timer: 2000 });
       cargarReservas();
     } catch (error) {
-      console.error("Error al hacer check-in:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error al realizar check-in",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Error al realizar check-in" });
     }
   };
 
-  const handleCheckOut = async (id) => {
-    const result = await Swal.fire({
-      title: "¿Realizar Check-Out?",
-      text: "Confirmar salida del huésped",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#17a2b8",
-      cancelButtonColor: "#6c757d",
-      confirmButtonText: "Sí, check-out",
-      cancelButtonText: "Cancelar",
-    });
+  const handleCheckOut = (reserva) => { setReservaCheckOut(reserva); setShowModalCheckOut(true); };
 
-    if (!result.isConfirmed) return;
-
+  const handleConfirmarCheckOut = async () => {
+    setLoadingCheckOut(true);
     try {
-      await clientAxios.put(`/reservas/${id}/estado`, { estado: "completada" });
-      Swal.fire({
-        icon: "success",
-        title: "Check-Out Realizado",
-        text: "Check-out realizado exitosamente",
-        timer: 2000,
-      });
+      await clientAxios.put(`/reservas/${reservaCheckOut._id}/estado`, { estado: "completada" });
+      setShowModalCheckOut(false);
+      setReservaCheckOut(null);
+      Swal.fire({ icon: "success", title: "Check-Out Realizado", timer: 2000 });
       cargarReservas();
     } catch (error) {
-      console.error("Error al hacer check-out:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error al realizar check-out",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Error al realizar check-out" });
+    } finally {
+      setLoadingCheckOut(false);
     }
   };
 
   const handleEliminarReserva = async (id) => {
     const result = await Swal.fire({
-      title: "¿Eliminar reserva?",
-      text: "Esta acción no se puede deshacer",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
+      title: "¿Eliminar reserva?", text: "Esta acción no se puede deshacer",
+      icon: "warning", showCancelButton: true,
+      confirmButtonColor: "#C0392B", cancelButtonColor: "#948A7C",
+      confirmButtonText: "Sí, eliminar", cancelButtonText: "Cancelar",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       await clientAxios.delete(`/reservas/${id}`);
-      Swal.fire({
-        icon: "success",
-        title: "Eliminada",
-        text: "Reserva eliminada exitosamente",
-        timer: 2000,
-      });
+      Swal.fire({ icon: "success", title: "Eliminada", timer: 2000 });
       cargarReservas();
     } catch (error) {
-      console.error("Error al eliminar reserva:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.response?.data?.msg || "Error al eliminar la reserva",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: error.response?.data?.msg || "Error al eliminar la reserva" });
     }
   };
 
-  // Obtener lista única de habitaciones
+  // Stats
+  const stats = {
+    total:     reservas.length,
+    pendiente: reservas.filter(r => r.estado === "pendiente").length,
+    confirmada:reservas.filter(r => r.estado === "confirmada").length,
+    completada:reservas.filter(r => r.estado === "completada").length,
+    cancelada: reservas.filter(r => r.estado === "cancelada").length,
+  };
+
   const habitacionesUnicas = [...new Set(reservas.map(r => r.habitacionId?.numero).filter(Boolean))].sort((a, b) => a - b);
 
-  // Aplicar todos los filtros
+  // Filtrado
   const reservasFiltradas = reservas.filter((reserva) => {
-    // Filtro por estado
     if (filtro !== "todas" && reserva.estado !== filtro) return false;
-
-    // Filtro por fecha (busca si la fecha está dentro del rango de la reserva)
+    if (busqueda) {
+      const q = busqueda.toLowerCase();
+      const coincide =
+        (reserva.codigoReserva || "").toLowerCase().includes(q) ||
+        (reserva.nombreCliente || "").toLowerCase().includes(q) ||
+        String(reserva.habitacionId?.numero || "").includes(q);
+      if (!coincide) return false;
+    }
     if (filtroFecha) {
       const fechaBusqueda = new Date(filtroFecha);
       const checkIn = new Date(reserva.fechaCheckIn);
       const checkOut = new Date(reserva.fechaCheckOut);
-
-      // Normalizar fechas para comparación solo de día
-      fechaBusqueda.setHours(0, 0, 0, 0);
-      checkIn.setHours(0, 0, 0, 0);
-      checkOut.setHours(0, 0, 0, 0);
-
+      fechaBusqueda.setHours(0,0,0,0); checkIn.setHours(0,0,0,0); checkOut.setHours(0,0,0,0);
       if (fechaBusqueda < checkIn || fechaBusqueda > checkOut) return false;
     }
-
-    // Filtro por habitación
     if (filtroHabitacion && reserva.habitacionId?.numero?.toString() !== filtroHabitacion) return false;
-
     return true;
   });
 
   const limpiarFiltros = () => {
-    setFiltro("todas");
-    setFiltroFecha("");
-    setFiltroHabitacion("");
-    setPaginaActual(1);
+    setFiltro("todas"); setBusqueda(""); setFiltroFecha(""); setFiltroHabitacion(""); setPaginaActual(1);
   };
 
-  // Calcular paginación
+  // Paginación
   const indiceUltimo = paginaActual * reservasPorPagina;
   const indicePrimero = indiceUltimo - reservasPorPagina;
   const reservasPaginadas = reservasFiltradas.slice(indicePrimero, indiceUltimo);
   const totalPaginas = Math.ceil(reservasFiltradas.length / reservasPorPagina);
 
-  const cambiarPagina = (numeroPagina) => {
-    setPaginaActual(numeroPagina);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const cambiarPagina = (num) => { setPaginaActual(num); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  const getStatusTabClass = (estado) => {
+    const activos = { todas: "active-all", pendiente: "active-pending", confirmada: "active-confirmed", completada: "active-completed", cancelada: "active-cancelled" };
+    return filtro === estado ? `status-tab ${activos[estado]}` : "status-tab";
   };
 
   return (
-    <div className="container my-5">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1>Gestión de Reservas</h1>
-          <p className="text-muted">
-            Administra las reservas del hotel: realiza check-in, check-out y cancela reservas
-          </p>
+    <>
+      {/* PAGE HEADER */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <div className="page-eyebrow">Administración</div>
+          <h1 className="page-title">Gestión de Reservas</h1>
+          <p className="page-subtitle">Realizá check-in, check-out y gestioná el estado de cada reserva.</p>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-secondary" onClick={limpiarFiltros}>↺ Limpiar filtros</button>
+          <button className="btn btn-secondary" onClick={cargarReservas}>↻ Actualizar</button>
         </div>
       </div>
 
-      <Tabs
-        defaultActiveKey="lista"
-        id="reservas-tabs"
-        className="mb-4"
-        fill
-      >
-        {/* Pestaña de Lista de Reservas */}
-        <Tab eventKey="lista" title={<><i className="bi bi-list-ul me-2"></i>Lista de Reservas</>}>
-          {/* Filtros */}
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="card-title mb-0">Filtros</h5>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={limpiarFiltros}>
-                      <i className="bi bi-x-circle me-1"></i>
-                      Limpiar Filtros
-                    </button>
-                  </div>
+      {/* STATS */}
+      <div className="stats-strip">
+        <div className="stat-card">
+          <div className="stat-icon total">📋</div>
+          <div className="stat-info"><div className="stat-num">{loading ? "—" : stats.total}</div><div className="stat-label">Total</div></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon pending">⏳</div>
+          <div className="stat-info"><div className="stat-num">{loading ? "—" : stats.pendiente}</div><div className="stat-label">Pendientes</div></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon confirmed">✅</div>
+          <div className="stat-info"><div className="stat-num">{loading ? "—" : stats.confirmada}</div><div className="stat-label">Confirmadas</div></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon completed">🏁</div>
+          <div className="stat-info"><div className="stat-num">{loading ? "—" : stats.completada}</div><div className="stat-label">Completadas</div></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon cancelled">❌</div>
+          <div className="stat-info"><div className="stat-num">{loading ? "—" : stats.cancelada}</div><div className="stat-label">Canceladas</div></div>
+        </div>
+      </div>
 
-                  {/* Filtro por Estado */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Por Estado:</label>
-                    <div className="btn-group d-flex flex-wrap" role="group">
-                      <button
-                        type="button"
-                        className={`btn ${filtro === "todas" ? "btn-primary" : "btn-outline-primary"}`}
-                        onClick={() => setFiltro("todas")}
-                      >
-                        Todas
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
-                        onClick={() => setFiltro("pendiente")}
-                      >
-                        Pendientes
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn ${filtro === "confirmada" ? "btn-success" : "btn-outline-success"}`}
-                        onClick={() => setFiltro("confirmada")}
-                      >
-                        Confirmadas
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn ${filtro === "completada" ? "btn-info" : "btn-outline-info"}`}
-                        onClick={() => setFiltro("completada")}
-                      >
-                        Completadas
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn ${filtro === "cancelada" ? "btn-danger" : "btn-outline-danger"}`}
-                        onClick={() => setFiltro("cancelada")}
-                      >
-                        Canceladas
-                      </button>
-                    </div>
-                  </div>
+      {/* TAB BAR */}
+      <div className="tab-bar" role="tablist">
+        <button
+          className={`tab-btn${tabActivo === "lista" ? " active" : ""}`}
+          onClick={() => setTabActivo("lista")}
+          role="tab"
+        >
+          <span className="tab-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3h18M3 9h18M3 15h18M3 21h18"/>
+            </svg>
+          </span>
+          Lista de Reservas
+        </button>
+        <button
+          className={`tab-btn${tabActivo === "calendario" ? " active" : ""}`}
+          onClick={() => setTabActivo("calendario")}
+          role="tab"
+        >
+          <span className="tab-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          Calendario de Disponibilidad
+        </button>
+      </div>
 
-                  {/* Filtros por Fecha y Habitación */}
-                  <div className="row">
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Por Fecha:</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={filtroFecha}
-                        onChange={(e) => setFiltroFecha(e.target.value)}
-                        placeholder="Seleccione una fecha"
-                      />
-                      <small className="text-muted">Muestra reservas activas en la fecha seleccionada</small>
-                    </div>
+      {/* ── LISTA VIEW ── */}
+      {tabActivo === "lista" && (
+        <>
+          {/* FILTER BAR */}
+          <div className="filter-bar" style={{ gap: 10 }}>
+            {/* Status tabs */}
+            <div className="filter-status-tabs" role="group">
+              {[
+                { key: "todas",     label: "Todas",      count: stats.total },
+                { key: "pendiente", label: "⏳ Pendientes", count: stats.pendiente },
+                { key: "confirmada",label: "✅ Confirmadas", count: stats.confirmada },
+                { key: "completada",label: "🏁 Completadas", count: stats.completada },
+                { key: "cancelada", label: "❌ Canceladas", count: stats.cancelada },
+              ].map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  className={getStatusTabClass(key)}
+                  onClick={() => { setFiltro(key); setPaginaActual(1); }}
+                >
+                  {label}
+                  <span className="tab-count">{count}</span>
+                </button>
+              ))}
+            </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Por Habitación:</label>
-                      <select
-                        className="form-select"
-                        value={filtroHabitacion}
-                        onChange={(e) => setFiltroHabitacion(e.target.value)}
-                      >
-                        <option value="">Todas las habitaciones</option>
-                        {habitacionesUnicas.map((numero) => (
-                          <option key={numero} value={numero}>
-                            Room {numero}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+            {/* Search + inline filters */}
+            <div className="filter-inline-row">
+              <div className="search-wrap-filter">
+                <span className="search-icon-f">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  className="filter-input search-inp"
+                  placeholder="Buscar por código, huésped, habitación…"
+                  value={busqueda}
+                  onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
+                />
+              </div>
 
-                  {/* Contador de resultados */}
-                  <div className="mt-3 text-end">
-                    <small className="text-muted">
-                      Mostrando <strong>{reservasFiltradas.length}</strong> de <strong>{reservas.length}</strong> reservas
-                    </small>
-                  </div>
-                </div>
+              <div className="filter-inline-item">
+                <span className="filter-inline-label">📅</span>
+                <input
+                  type="date"
+                  className="filter-input"
+                  value={filtroFecha}
+                  onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1); }}
+                  style={{ width: 152 }}
+                />
+              </div>
+
+              <div className="filter-inline-item">
+                <span className="filter-inline-label">🛏</span>
+                <select
+                  className="filter-select"
+                  value={filtroHabitacion}
+                  onChange={(e) => { setFiltroHabitacion(e.target.value); setPaginaActual(1); }}
+                  style={{ minWidth: 170 }}
+                >
+                  <option value="">Todas las hab.</option>
+                  {habitacionesUnicas.map((n) => (
+                    <option key={n} value={n}>Room {n}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-results-count">
+                {reservasFiltradas.length} de {reservas.length}
               </div>
             </div>
           </div>
 
-          <div className="row">
-            <div className="col-12">
-              {loading ? (
-                <div className="text-center">
-                  <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Cargando...</span>
+          {/* TABLA + PAGINACIÓN */}
+          {loading ? (
+            <div className="empty-state"><div className="empty-icon">⏳</div><div className="empty-title">Cargando reservas…</div></div>
+          ) : (
+            <>
+              <TablaReservas
+                reservas={reservasPaginadas}
+                onEditar={handleVerReserva}
+                onCancelar={handleCancelarReserva}
+                onCheckIn={handleCheckIn}
+                onCheckOut={handleCheckOut}
+                onEliminar={handleEliminarReserva}
+              />
+
+              {totalPaginas > 1 && (
+                <div className="pagination">
+                  <span className="pagination-info">
+                    Página {paginaActual} de {totalPaginas} · {reservasFiltradas.length} reservas
+                  </span>
+                  <div className="pagination-controls">
+                    <button
+                      className="page-btn"
+                      disabled={paginaActual === 1}
+                      onClick={() => cambiarPagina(paginaActual - 1)}
+                    >‹</button>
+
+                    {[...Array(totalPaginas)].map((_, i) => {
+                      const n = i + 1;
+                      if (n === 1 || n === totalPaginas || (n >= paginaActual - 2 && n <= paginaActual + 2)) {
+                        return (
+                          <button
+                            key={n}
+                            className={`page-btn${paginaActual === n ? " active" : ""}`}
+                            onClick={() => cambiarPagina(n)}
+                          >{n}</button>
+                        );
+                      } else if (n === paginaActual - 3 || n === paginaActual + 3) {
+                        return <button key={n} className="page-btn" disabled>…</button>;
+                      }
+                      return null;
+                    })}
+
+                    <button
+                      className="page-btn"
+                      disabled={paginaActual === totalPaginas}
+                      onClick={() => cambiarPagina(paginaActual + 1)}
+                    >›</button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <TablaReservas
-                    reservas={reservasPaginadas}
-                    onEditar={handleVerReserva}
-                    onCancelar={handleCancelarReserva}
-                    onCheckIn={handleCheckIn}
-                    onCheckOut={handleCheckOut}
-                    onEliminar={handleEliminarReserva}
-                  />
-
-                  {/* Paginador */}
-                  {totalPaginas > 1 && (
-                    <div className="d-flex justify-content-center align-items-center mt-4">
-                      <nav>
-                        <ul className="pagination mb-0">
-                          <li className={`page-item ${paginaActual === 1 ? 'disabled' : ''}`}>
-                            <button
-                              className="page-link"
-                              onClick={() => cambiarPagina(paginaActual - 1)}
-                              disabled={paginaActual === 1}
-                            >
-                              Anterior
-                            </button>
-                          </li>
-
-                          {[...Array(totalPaginas)].map((_, index) => {
-                            const numeroPagina = index + 1;
-                            // Mostrar solo 5 páginas alrededor de la página actual
-                            if (
-                              numeroPagina === 1 ||
-                              numeroPagina === totalPaginas ||
-                              (numeroPagina >= paginaActual - 2 && numeroPagina <= paginaActual + 2)
-                            ) {
-                              return (
-                                <li
-                                  key={numeroPagina}
-                                  className={`page-item ${paginaActual === numeroPagina ? 'active' : ''}`}
-                                >
-                                  <button
-                                    className="page-link"
-                                    onClick={() => cambiarPagina(numeroPagina)}
-                                  >
-                                    {numeroPagina}
-                                  </button>
-                                </li>
-                              );
-                            } else if (
-                              numeroPagina === paginaActual - 3 ||
-                              numeroPagina === paginaActual + 3
-                            ) {
-                              return (
-                                <li key={numeroPagina} className="page-item disabled">
-                                  <span className="page-link">...</span>
-                                </li>
-                              );
-                            }
-                            return null;
-                          })}
-
-                          <li className={`page-item ${paginaActual === totalPaginas ? 'disabled' : ''}`}>
-                            <button
-                              className="page-link"
-                              onClick={() => cambiarPagina(paginaActual + 1)}
-                              disabled={paginaActual === totalPaginas}
-                            >
-                              Siguiente
-                            </button>
-                          </li>
-                        </ul>
-                      </nav>
-                      <div className="ms-3 text-muted">
-                        Página {paginaActual} de {totalPaginas}
-                      </div>
-                    </div>
-                  )}
-                </>
               )}
-            </div>
-          </div>
-        </Tab>
+            </>
+          )}
+        </>
+      )}
 
-        {/* Pestaña de Calendario */}
-        <Tab eventKey="calendario" title={<><i className="bi bi-calendar3 me-2"></i>Calendario de Disponibilidad</>}>
-          <div className="row">
-            <div className="col-12">
-              {loading ? (
-                <div className="text-center">
-                  <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                  </div>
-                </div>
-              ) : (
-                <CalendarioDisponibilidad
-                  reservas={reservas}
-                  onVerReserva={handleVerReserva}
-                />
-              )}
-            </div>
-          </div>
-        </Tab>
-      </Tabs>
+      {/* ── CALENDARIO VIEW ── */}
+      {tabActivo === "calendario" && (
+        loading ? (
+          <div className="empty-state"><div className="empty-icon">⏳</div><div className="empty-title">Cargando…</div></div>
+        ) : (
+          <CalendarioDisponibilidad reservas={reservas} onVerReserva={handleVerReserva} />
+        )
+      )}
 
+      {/* MODALES */}
       {showModal && (
         <ModalReserva
           show={showModal}
@@ -456,7 +371,15 @@ const GestionReservasScreen = () => {
           onGuardar={cargarReservas}
         />
       )}
-    </div>
+
+      <ModalCheckOut
+        show={showModalCheckOut}
+        onHide={() => { setShowModalCheckOut(false); setReservaCheckOut(null); }}
+        onConfirmar={handleConfirmarCheckOut}
+        reserva={reservaCheckOut}
+        loading={loadingCheckOut}
+      />
+    </>
   );
 };
 

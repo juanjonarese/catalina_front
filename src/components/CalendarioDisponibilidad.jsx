@@ -1,207 +1,120 @@
-import { useState, useEffect } from 'react';
-import { Button, Badge } from 'react-bootstrap';
+import { useState, useEffect } from "react";
+
+const COLORES = {
+  pendiente:  { bg: "var(--amber)",  text: "#000" },
+  confirmada: { bg: "var(--blue)",   text: "#fff" },
+};
 
 const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
   const [fechaActual, setFechaActual] = useState(new Date());
   const [diasMes, setDiasMes] = useState([]);
 
-  // Colores por estado de reserva
-  const coloresPorEstado = {
-    'pendiente': '#FFC107',      // Amarillo - Reserva pendiente
-    'confirmada': '#28A745',     // Verde - Reserva confirmada
-    'completada': '#33FF57',     // Verde (no se muestra)
-    'cancelada': '#999999'       // Gris (no se muestra)
-  };
-
-  useEffect(() => {
-    generarDiasMes();
-  }, [fechaActual]);
+  useEffect(() => { generarDiasMes(); }, [fechaActual]);
 
   const generarDiasMes = () => {
     const año = fechaActual.getFullYear();
     const mes = fechaActual.getMonth();
-
-    const primerDia = new Date(año, mes, 1);
-    const ultimoDia = new Date(año, mes + 1, 0);
-    const diasEnMes = ultimoDia.getDate();
-    // Lunes como primer día de la semana (Argentina): lunes=0, ..., domingo=6
-    const primerDiaSemana = (primerDia.getDay() + 6) % 7;
-
+    const ultimoDia = new Date(año, mes + 1, 0).getDate();
     const dias = [];
-
-    // Solo días reales del mes
-    for (let dia = 1; dia <= diasEnMes; dia++) {
-      dias.push(new Date(año, mes, dia));
-    }
-
+    for (let dia = 1; dia <= ultimoDia; dia++) dias.push(new Date(año, mes, dia));
     setDiasMes(dias);
   };
 
-  const mesAnterior = () => {
-    setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1));
-  };
-
-  const mesSiguiente = () => {
-    setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 1));
-  };
-
-  const mesActual = () => {
-    setFechaActual(new Date());
-  };
+  const mesAnterior  = () => setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1));
+  const mesSiguiente = () => setFechaActual(new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 1));
+  const mesActual    = () => setFechaActual(new Date());
 
   const obtenerReservasPorDia = (fecha) => {
     if (!fecha) return [];
-
-    return reservas.filter(reserva => {
-      // Excluir reservas canceladas y completadas (checkout) - habitaciones disponibles
-      if (reserva.estado === 'cancelada' || reserva.estado === 'completada') {
-        return false;
-      }
-
-      const checkIn = new Date(reserva.fechaCheckIn);
-      const checkOut = new Date(reserva.fechaCheckOut);
-
-      // Normalizar las fechas para comparar solo día/mes/año
-      const fechaNormalizada = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-      const checkInNormalizado = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate());
-      const checkOutNormalizado = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate());
-
-      return fechaNormalizada >= checkInNormalizado && fechaNormalizada <= checkOutNormalizado;
+    return reservas.filter(r => {
+      if (r.estado === "cancelada" || r.estado === "completada") return false;
+      const f  = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+      const ci = new Date(new Date(r.fechaCheckIn).getFullYear(), new Date(r.fechaCheckIn).getMonth(), new Date(r.fechaCheckIn).getDate());
+      const co = new Date(new Date(r.fechaCheckOut).getFullYear(), new Date(r.fechaCheckOut).getMonth(), new Date(r.fechaCheckOut).getDate());
+      return f >= ci && f <= co;
     });
   };
 
   const esDiaActual = (fecha) => {
     if (!fecha) return false;
     const hoy = new Date();
-    return fecha.getDate() === hoy.getDate() &&
-           fecha.getMonth() === hoy.getMonth() &&
-           fecha.getFullYear() === hoy.getFullYear();
+    return fecha.getDate() === hoy.getDate() && fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
   };
 
-  const nombreMes = fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const nombreMes = fechaActual.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 
   return (
-    <div className="calendario-disponibilidad">
-      <div className="d-flex justify-content-end align-items-center gap-2 mb-4 flex-wrap pe-3">
-        <input
-          type="month"
-          className="form-control"
-          style={{ width: 'auto' }}
-          value={`${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`}
-          onChange={(e) => {
-            const [year, month] = e.target.value.split('-');
-            setFechaActual(new Date(Number(year), Number(month) - 1, 1));
-          }}
-        />
-        <Button variant="outline-secondary" onClick={mesAnterior}>
-          <i className="bi bi-chevron-left"></i>
-          <span className="d-none d-sm-inline"> Mes Anterior</span>
-        </Button>
-        <Button variant="outline-primary" onClick={mesActual}>
-          Hoy
-        </Button>
-        <Button variant="outline-secondary" onClick={mesSiguiente}>
-          <span className="d-none d-sm-inline">Mes Siguiente </span>
-          <i className="bi bi-chevron-right"></i>
-        </Button>
-      </div>
-
-      {/* Aclaración del calendario */}
-      <div className="mb-3 p-3 bg-light rounded">
-        <div className="d-flex flex-column gap-2">
-          <div>
-            <i className="bi bi-info-circle me-2 text-primary"></i>
-            <strong>Solo se muestran habitaciones con reservas activas (confirmadas o pendientes)</strong>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Header del calendario */}
+      <div className="cal-header">
+        <div className="cal-month-nav">
+          <button className="cal-nav-btn" onClick={mesAnterior} aria-label="Mes anterior">‹</button>
+          <div className="cal-month-label" style={{ textTransform: "capitalize" }}>{nombreMes}</div>
+          <button className="cal-nav-btn" onClick={mesSiguiente} aria-label="Mes siguiente">›</button>
+          <button className="cal-today-btn" onClick={mesActual}>Hoy</button>
+        </div>
+        <div className="cal-legend">
+          <div className="legend-item">
+            <div className="legend-dot" style={{ background: "var(--amber)" }} />
+            Pendiente
           </div>
-          <div className="d-flex align-items-center gap-3 ms-4">
-            <div className="d-flex align-items-center gap-2">
-              <div
-                style={{
-                  backgroundColor: '#FFC107',
-                  width: '80px',
-                  height: '32px',
-                  borderRadius: '6px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-                }}
-              ></div>
-              <span>= Reserva Pendiente</span>
-            </div>
-            <div className="d-flex align-items-center gap-2">
-              <div
-                style={{
-                  backgroundColor: '#28A745',
-                  width: '80px',
-                  height: '32px',
-                  borderRadius: '6px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-                }}
-              ></div>
-              <span>= Reserva Confirmada</span>
-            </div>
+          <div className="legend-item">
+            <div className="legend-dot" style={{ background: "var(--blue)" }} />
+            Confirmada
           </div>
         </div>
       </div>
 
-      <div className="calendario-grid">
-        {/* Días del mes — flex wrap, ancho fijo por tarjeta */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Grilla de días */}
+      <div style={{
+        background: "var(--bg-card)", border: "1px solid var(--border)",
+        borderRadius: 12, padding: 20, boxShadow: "var(--shadow-sm)",
+      }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {diasMes.map((fecha, index) => {
             const reservasDia = obtenerReservasPorDia(fecha);
             const esHoy = esDiaActual(fecha);
+            const diaSemana = ["D", "L", "M", "M", "J", "V", "S"][fecha.getDay()];
 
             return (
               <div
                 key={index}
-                className={`dia-calendario ${esHoy ? 'dia-actual' : ''}`}
                 style={{
-                  width: '105px',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px',
-                  padding: '8px',
-                  backgroundColor: esHoy ? '#e3f2fd' : '#fff',
+                  width: 105,
+                  border: `${esHoy ? "2px solid var(--brand)" : "1px solid var(--border)"}`,
+                  borderRadius: 10,
+                  padding: 8,
+                  background: esHoy ? "rgba(148,138,124,0.06)" : "var(--bg-elevated)",
+                  transition: "box-shadow 0.2s",
                 }}
               >
-                {/* Letra del día de la semana (Argentina: L M M J V S D) */}
-                <div className="text-muted text-center" style={{ fontSize: '0.7rem', lineHeight: 1, marginBottom: '2px' }}>
-                  {['D', 'L', 'M', 'M', 'J', 'V', 'S'][fecha.getDay()]}
+                <div style={{ fontSize: "0.68rem", textAlign: "center", color: "var(--text-3)", lineHeight: 1, marginBottom: 2 }}>
+                  {diaSemana}
                 </div>
-                <div className={`fw-bold mb-2 text-center ${esHoy ? 'text-primary' : 'text-dark'}`}>
+                <div style={{
+                  fontWeight: 700, textAlign: "center", marginBottom: 6,
+                  color: esHoy ? "var(--brand)" : "var(--text-1)", fontSize: 14,
+                }}>
                   {fecha.getDate()}
                 </div>
-                <div className="d-flex flex-column gap-2">
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {reservasDia.map((reserva, idx) => {
-                    const esAmarillo = reserva.estado === 'pendiente';
-                    const colorFondo = coloresPorEstado[reserva.estado] || '#6c757d';
+                    const cfg = COLORES[reserva.estado] || { bg: "var(--bg-2)", text: "var(--text-1)" };
                     return (
                       <div
                         key={idx}
                         onClick={() => onVerReserva && onVerReserva(reserva)}
+                        title={`Room ${reserva.habitacionId?.numero} — ${reserva.nombreCliente} (${reserva.estado})`}
                         style={{
-                          backgroundColor: colorFondo,
-                          fontSize: '0.72rem',
-                          padding: '4px 6px',
-                          cursor: 'pointer',
-                          width: '100%',
-                          fontWeight: 'bold',
-                          border: '2px solid rgba(0,0,0,0.2)',
-                          color: esAmarillo ? '#000' : '#fff',
-                          textShadow: esAmarillo ? 'none' : '1px 1px 2px rgba(0,0,0,0.4)',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                          borderRadius: '6px',
-                          textAlign: 'center',
-                          transition: 'transform 0.2s, box-shadow 0.2s'
+                          background: cfg.bg, color: cfg.text,
+                          fontSize: "0.68rem", fontWeight: 700,
+                          padding: "3px 6px", borderRadius: 6,
+                          cursor: "pointer", textAlign: "center",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                          transition: "transform 0.15s",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.25)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
-                        }}
-                        title={`Room ${reserva.habitacionId?.numero} - ${reserva.nombreCliente} - ${reserva.estado}`}
+                        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                       >
                         Room {reserva.habitacionId?.numero}
                       </div>
@@ -213,21 +126,6 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
           })}
         </div>
       </div>
-
-      <style>{`
-        .calendario-grid {
-          background: white;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .dia-calendario.vacio {
-          background-color: #f8f9fa !important;
-        }
-        .dia-actual {
-          border: 2px solid #0d6efd !important;
-        }
-      `}</style>
     </div>
   );
 };

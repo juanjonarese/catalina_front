@@ -126,6 +126,15 @@
   background-color: rgb(35, 88, 80);
 }
 
+/* ===== PRINT ===== */
+#print-area {
+  display: none;
+}
+
+.no-print {
+  /* usado por el modal footer */
+}
+
 /* ===== RESPONSIVE MOBILE ===== */
 @media (max-width: 576px) {
   .overlay h1 {
