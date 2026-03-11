@@ -169,6 +169,7 @@ const GestionReservasScreen = () => {
         <div className="page-actions">
           <button className="btn btn-secondary" onClick={limpiarFiltros}>↺ Limpiar filtros</button>
           <button className="btn btn-secondary" onClick={cargarReservas}>↻ Actualizar</button>
+          <button className="btn btn-primary" onClick={() => { setReservaSeleccionada(null); setShowModal(true); }}>＋ Nueva Reserva</button>
         </div>
       </div>
 
