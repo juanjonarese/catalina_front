@@ -2841,16 +2841,26 @@ body {
 /* Mini calendar */
 .mini-cal { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-sm); }
 .mini-cal-header { padding:14px 18px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-.mini-cal-title  { font-size:15px; font-weight:700; color:var(--text-1); }
+.mini-cal-title  { font-family:'DM Serif Display',serif; font-size:15px; color:var(--text-1); }
 .mini-cal-nav    { display:flex; gap:4px; }
 .mini-cal-btn    { width:26px; height:26px; border-radius:6px; border:1.5px solid var(--border); background:var(--bg-2); font-size:12px; cursor:pointer; transition:all var(--transition); display:flex; align-items:center; justify-content:center; color:var(--text-2); }
 .mini-cal-btn:hover { border-color:var(--brand); color:var(--brand); }
 .mini-cal-body   { padding:12px 14px 16px; }
-.mini-cal-grid   { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.mini-cal-grid,.mini-cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
 .mini-cal-dow    { font-size:9px; font-weight:700; color:var(--text-3); text-align:center; text-transform:uppercase; padding:4px 0; }
-.mini-cal-cell   { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-2); }
-.mini-cal-cell.today       { font-weight:700; color:var(--brand); border:1.5px solid var(--brand); }
-.mini-cal-cell.other-month { color:var(--text-3); opacity:.4; }
+.mini-cal-cell   { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-2); transition:all var(--transition); cursor:default; }
+.mini-cal-cell.today          { font-weight:700; color:var(--brand); border:1.5px solid var(--brand); background:rgba(100,180,246,.18); }
+.mini-cal-cell.other-month    { color:var(--text-3); opacity:.4; }
+.mini-cal-cell.season-high    { background:rgba(192,57,43,.12); color:var(--red); }
+.mini-cal-cell.season-mid     { background:rgba(139,92,42,.12);  color:var(--amber); }
+.mini-cal-cell.season-low     { background:rgba(45,109,164,.12); color:var(--blue); }
+.mini-cal-cell.season-special { background:rgba(107,79,160,.12); color:var(--purple,#6B4FA0); }
+.mini-cal-cell.season-green   { background:rgba(74,124,89,.12);  color:var(--green); }
+.mini-cal-cell.season-high.today    { border-color:var(--red); }
+.mini-cal-cell.season-mid.today     { border-color:var(--amber); }
+.mini-cal-cell.season-low.today     { border-color:var(--blue); }
+.mini-cal-cell.season-special.today { border-color:var(--purple,#6B4FA0); }
+.mini-cal-cell.season-green.today   { border-color:var(--green); }
 .mini-cal-legend { display:flex; flex-wrap:wrap; gap:8px; padding:0 14px 14px; }
 .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-3); }
 .legend-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }

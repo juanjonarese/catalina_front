@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 const ROOM_W   = 168;
 const DAY_W    = 36;
@@ -12,7 +13,28 @@ const STATUS_COLOR = {
   cancelada:  "red",
 };
 
-const DOW = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
+const STATUS_BADGE = {
+  pendiente:  "badge-pending",
+  confirmada: "badge-confirmed",
+  completada: "badge-completed",
+  cancelada:  "badge-cancelled",
+};
+
+const STATUS_LABEL = {
+  pendiente:  "Pendiente",
+  confirmada: "Confirmada",
+  completada: "Completada",
+  cancelada:  "Cancelada",
+};
+
+const STATUS_ICON = {
+  pendiente:  "⏳",
+  confirmada: "✅",
+  completada: "🏁",
+  cancelada:  "❌",
+};
+
+const DOW_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 function toISO(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -23,8 +45,109 @@ function fmtDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
+// "18 mar" style
+function fmtShort(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+}
+
+function dayOfWeek(iso) {
+  if (!iso) return "";
+  const d = new Date(iso + "T12:00:00");
+  return DOW_ES[d.getDay()];
+}
+
+/* ── Popover ──────────────────────────────────────────────────────── */
+function CalPopover({ reserva, rect, onClose, onVerDetalle }) {
+  const POP_W = 290;
+  const POP_H = 280;
+
+  const n = Math.round(
+    (new Date(reserva.fechaCheckOut) - new Date(reserva.fechaCheckIn)) / 86400000
+  );
+
+  const ci  = toISO(new Date(reserva.fechaCheckIn));
+  const co  = toISO(new Date(reserva.fechaCheckOut));
+  const hab = reserva.habitacionId;
+
+  let left = rect.left + rect.width / 2 - POP_W / 2;
+  let top  = rect.bottom + 8;
+  if (left < 8) left = 8;
+  if (left + POP_W > window.innerWidth - 8) left = window.innerWidth - POP_W - 8;
+  if (top + POP_H > window.innerHeight - 8) top = rect.top - POP_H - 8;
+  top = Math.max(8, top);
+
+  return createPortal(
+    <div
+      className="popover cal-popover"
+      style={{ left, top }}
+      onClick={e => e.stopPropagation()}
+    >
+      <button className="popover-close" onClick={onClose} aria-label="Cerrar">✕</button>
+
+      {/* Header: estado + código */}
+      <div className="cal-pop-head" style={{ paddingRight: 28 }}>
+        <span className={`badge ${STATUS_BADGE[reserva.estado] || "badge-pending"}`}>
+          {STATUS_ICON[reserva.estado]} {STATUS_LABEL[reserva.estado]}
+        </span>
+        <span className="cal-pop-code">{reserva.codigoReserva || "—"}</span>
+      </div>
+
+      {/* Habitación */}
+      <div className="cal-pop-room">
+        {hab ? `Room ${hab.numero} — ${hab.titulo || hab.nombre}` : "—"}
+      </div>
+
+      {/* Huésped */}
+      <div className="cal-pop-guest">
+        <span className="cal-pop-guest-icon">👤</span>
+        <span>{reserva.nombreCliente || "—"}</span>
+      </div>
+
+      {/* Fechas */}
+      <div className="cal-pop-dates">
+        <div className="cal-pop-date-block">
+          <div className="cal-pop-date-label">Check-in</div>
+          <div className="cal-pop-date-val">{fmtShort(ci)}</div>
+          <div className="cal-pop-date-day">{dayOfWeek(ci)}</div>
+        </div>
+        <div className="cal-pop-date-arrow">→</div>
+        <div className="cal-pop-date-block">
+          <div className="cal-pop-date-label">Check-out</div>
+          <div className="cal-pop-date-val">{fmtShort(co)}</div>
+          <div className="cal-pop-date-day">{dayOfWeek(co)}</div>
+        </div>
+        <div className="cal-pop-nights">
+          <div className="cal-pop-nights-num">{n}</div>
+          <div className="cal-pop-nights-lbl">noche{n !== 1 ? "s" : ""}</div>
+        </div>
+      </div>
+
+      {/* Precio */}
+      <div className="cal-pop-price">
+        Total: <strong>${Number(reserva.precioTotal || 0).toLocaleString("es-AR")}</strong>
+      </div>
+
+      {/* Acciones */}
+      <div className="cal-pop-actions">
+        <button
+          className="btn btn-secondary"
+          style={{ flex: 1, fontSize: 11, padding: "7px 10px" }}
+          onClick={() => { onClose(); onVerDetalle(reserva); }}
+        >
+          Ver detalle completo
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ── CalendarioDisponibilidad ─────────────────────────────────────── */
 const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
   const [fechaActual, setFechaActual] = useState(new Date());
+  const [popover, setPopover]         = useState(null); // { reserva, rect }
 
   const mesAnterior  = () => setFechaActual(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   const mesSiguiente = () => setFechaActual(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
@@ -39,6 +162,16 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
 
   const nombreMes = fechaActual.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 
+  // Cerrar popover al hacer click fuera
+  const closePopover = useCallback(() => setPopover(null), []);
+
+  useEffect(() => {
+    if (!popover) return;
+    const handler = () => closePopover();
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [popover, closePopover]);
+
   const days = useMemo(() => (
     Array.from({ length: daysInMonth }, (_, i) => {
       const d   = new Date(año, mes, i + 1);
@@ -46,7 +179,7 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
       return {
         num:       i + 1,
         iso,
-        dow:       DOW[d.getDay()],
+        dow:       DOW_ES[d.getDay()],
         isToday:   iso === today,
         isWeekend: d.getDay() === 0 || d.getDay() === 6,
       };
@@ -115,7 +248,7 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
       <div className="cal-wrap" style={{ overflowX: "auto" }}>
         <div className="gantt" style={{ width: totalW, minWidth: totalW }}>
 
-          {/* HEADER: dow + date numbers */}
+          {/* HEADER */}
           <div className="gantt-header" style={{ height: HEADER_H }}>
             <div className="gantt-corner" style={{ width: ROOM_W, height: HEADER_H }}>
               <span style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-3)", fontWeight: 600 }}>
@@ -146,7 +279,7 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
             return (
               <div key={room.id} className="gantt-row" style={{ height: ROW_H }}>
 
-                {/* Room label — sticky left */}
+                {/* Room label */}
                 <div className="gantt-room-label" style={{ width: ROOM_W, height: ROW_H }}>
                   <div className="gantt-room-main">
                     <span className="gantt-room-id">Hab. {room.numero}</span>
@@ -186,27 +319,45 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
 
                     const startDay = parseInt(clampedStart.split("-")[2], 10);
                     const endDay   = parseInt(clampedEnd.split("-")[2],   10);
-                    const barLeft  = (startDay - 1) * DAY_W;
-                    const barWidth = (endDay - startDay) * DAY_W;
-
-                    if (barWidth <= 0) return null;
 
                     const continuesLeft  = res.checkin  < monthStart;
                     const continuesRight = res.checkout > monthEnd;
-                    const isActive       = res.checkin <= today && res.checkout > today;
-                    const guestFirst     = res.guestName.split(" ")[0];
-                    const original       = reservas.find(r => r._id === res.id);
+
+                    // Media celda en los extremos: check-in a las 14h, check-out a las 11h
+                    const halfDay     = DAY_W / 2;
+                    const adjLeft     = continuesLeft  ? 0       : halfDay;
+                    const adjRight    = continuesRight ? DAY_W   : halfDay;
+                    const adjBarLeft  = (startDay - 1) * DAY_W + adjLeft;
+                    const adjBarRight = (endDay   - 1) * DAY_W + adjRight;
+                    const adjBarWidth = adjBarRight - adjBarLeft;
+
+                    if (adjBarWidth <= 0) return null;
+
+                    const isActive   = res.checkin <= today && res.checkout > today;
+                    const guestFirst = res.guestName.split(" ")[0];
+                    const original   = reservas.find(r => r._id === res.id);
 
                     return (
                       <div
                         key={res.id}
                         className={`gantt-bar gantt-bar-${res.color}${isActive ? " gantt-bar-active" : ""}`}
-                        style={{ left: barLeft, width: barWidth, top: 8, height: ROW_H - 16 }}
-                        onClick={() => onVerReserva && original && onVerReserva(original)}
+                        style={{ left: adjBarLeft, width: adjBarWidth, top: 8, height: ROW_H - 16 }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (original) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopover({ reserva: original, rect });
+                          }
+                        }}
                         title={`${res.guestName} · ${fmtDate(res.checkin)} → ${fmtDate(res.checkout)} · ${res.status}`}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={e => e.key === "Enter" && onVerReserva && original && onVerReserva(original)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && original) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopover({ reserva: original, rect });
+                          }
+                        }}
                       >
                         {continuesLeft  && <span className="gantt-bar-arr gantt-bar-arr-l">◂</span>}
                         <span className="gantt-bar-label">
@@ -234,6 +385,16 @@ const CalendarioDisponibilidad = ({ reservas, onVerReserva }) => {
 
         </div>
       </div>
+
+      {/* Popover */}
+      {popover && (
+        <CalPopover
+          reserva={popover.reserva}
+          rect={popover.rect}
+          onClose={closePopover}
+          onVerDetalle={r => { onVerReserva && onVerReserva(r); }}
+        />
+      )}
     </div>
   );
 };

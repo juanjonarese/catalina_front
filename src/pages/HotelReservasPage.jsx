@@ -90,6 +90,12 @@ export default function HotelReservasPage() {
   const [guestInfo, setGuestInfo]     = useState({ nombre: '', email: '', telefono: '' });
   const [loadingPago, setLoadingPago] = useState(false);
 
+  // Cupón
+  const [couponInput,   setCouponInput]   = useState('');
+  const [cupon,         setCupon]         = useState(null);
+  const [couponMsg,     setCouponMsg]     = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   // Toasts
   const [toasts, setToasts] = useState([]);
 
@@ -160,6 +166,9 @@ export default function HotelReservasPage() {
   const openModal = (room) => {
     setSelectedRoom(room);
     setGuestInfo({ nombre: '', email: '', telefono: '' });
+    setCouponInput('');
+    setCupon(null);
+    setCouponMsg('');
     setModalStep(1);
   };
 
@@ -170,20 +179,54 @@ export default function HotelReservasPage() {
 
   // ── Payload común ─────────────────────────────────────────────────────────
   const buildPayload = () => {
-    const precio = selectedRoom.precioPromocion || selectedRoom.precio;
     return {
-      nombreCliente:    guestInfo.nombre.trim(),
-      emailCliente:     guestInfo.email.trim(),
-      telefonoCliente:  guestInfo.telefono.trim(),
-      habitacionId:     selectedRoom._id,
-      numAdultos:       adults,
-      numNinos:         children,
-      fechaCheckIn:     checkIn,
-      fechaCheckOut:    checkOut,
-      precioTotal:      precio * nights,
-      tituloHabitacion: selectedRoom.titulo,
-      numeroHabitacion: selectedRoom.numero,
+      nombreCliente:     guestInfo.nombre.trim(),
+      emailCliente:      guestInfo.email.trim(),
+      telefonoCliente:   guestInfo.telefono.trim(),
+      habitacionId:      selectedRoom._id,
+      numAdultos:        adults,
+      numNinos:          children,
+      fechaCheckIn:      checkIn,
+      fechaCheckOut:     checkOut,
+      precioTotal:       precioFinal,
+      codigoCupon:       cupon ? cupon.code : undefined,
+      descuentoAplicado: descuento > 0 ? descuento : undefined,
+      tituloHabitacion:  selectedRoom.titulo,
+      numeroHabitacion:  selectedRoom.numero,
     };
+  };
+
+  // ── Aplicar cupón ──────────────────────────────────────────────────────────
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    setCupon(null);
+    setCouponMsg('');
+    try {
+      const res = await clientAxios.get('/cupones/validar', {
+        params: { codigo: code, noches: nights, tipoHabitacion: selectedRoom?.tipo || '' },
+      });
+      setCupon(res.data);
+      const disc = calcDiscount(res.data, precioTotal, precioNoche);
+      const label = res.data.type === 'pct'  ? `${res.data.value}% OFF`
+                  : res.data.type === 'flat' ? `$${formatPrecio(res.data.value)} OFF`
+                  : 'Una noche gratis';
+      setCouponMsg(`✓ ${res.data.name} — ${label}. Ahorrás $${formatPrecio(disc)}`);
+    } catch (err) {
+      const errorMap = {
+        notfound:  'Cupón no encontrado.',
+        inactive:  'Este cupón está inactivo.',
+        expired:   'Este cupón está vencido.',
+        notyet:    'Este cupón aún no está vigente.',
+        maxused:   'Este cupón ya alcanzó el límite de usos.',
+        minnights: `Este cupón requiere mínimo ${err.response?.data?.min} noches.`,
+        scope:     'Este cupón no aplica a esta habitación.',
+      };
+      setCouponMsg(errorMap[err.response?.data?.error] || 'Error al validar el cupón.');
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
   // ── Pagar con MercadoPago ─────────────────────────────────────────────────
@@ -217,6 +260,17 @@ export default function HotelReservasPage() {
   // ── Precio seleccionado ───────────────────────────────────────────────────
   const precioNoche = selectedRoom ? (selectedRoom.precioPromocion || selectedRoom.precio) : 0;
   const precioTotal = precioNoche * nights;
+
+  const calcDiscount = (cup, total, noche) => {
+    if (!cup) return 0;
+    if (cup.type === 'pct')  return Math.round(total * cup.value / 100);
+    if (cup.type === 'flat') return Math.min(cup.value, total);
+    if (cup.type === 'free') return noche;
+    return 0;
+  };
+
+  const descuento  = calcDiscount(cupon, precioTotal, precioNoche);
+  const precioFinal = precioTotal - descuento;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -452,7 +506,7 @@ export default function HotelReservasPage() {
                     alt={selectedRoom.titulo}
                   />
                   <button className="hs-modal-close-img" onClick={closeModal}>✕</button>
-                  {selectedRoom.precioPromocion && (
+                  {!!selectedRoom.precioPromocion && (
                     <div style={{
                       position: 'absolute', bottom: 12, left: 12,
                       background: 'var(--amber)', color: 'white',
@@ -486,7 +540,7 @@ export default function HotelReservasPage() {
 
                 <div className="bk-footer">
                   <div className="bk-price-wrap">
-                    {selectedRoom.precioPromocion && (
+                    {!!selectedRoom.precioPromocion && (
                       <div style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'line-through' }}>
                         ${formatPrecio(selectedRoom.precio)}/noche
                       </div>
@@ -562,11 +616,56 @@ export default function HotelReservasPage() {
                       disabled={loadingPago}
                     />
                   </div>
+
+                  {/* Cupón de descuento */}
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                    <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', fontWeight: 600, marginBottom: 10 }}>
+                      Cupón de descuento
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Ej: HOTEL20"
+                        value={couponInput}
+                        style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                        onChange={e => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          if (cupon) { setCupon(null); setCouponMsg(''); }
+                        }}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                        disabled={loadingPago}
+                      />
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleApplyCoupon}
+                        disabled={!couponInput.trim() || couponLoading || loadingPago}
+                        style={{ whiteSpace: 'nowrap', minWidth: 82 }}
+                      >
+                        {couponLoading ? '...' : 'Aplicar'}
+                      </button>
+                    </div>
+                    {couponMsg && (
+                      <div style={{
+                        fontSize: 12, marginTop: 8, padding: '8px 12px', borderRadius: 7, lineHeight: 1.4,
+                        background: cupon ? '#f0fdf4' : '#fef2f2',
+                        color: cupon ? '#16a34a' : '#dc2626',
+                        border: `1px solid ${cupon ? '#bbf7d0' : '#fecaca'}`,
+                      }}>
+                        {couponMsg}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bk-footer">
                   <div className="bk-price-wrap">
-                    <div className="bk-price-num">${formatPrecio(precioTotal)}</div>
+                    {descuento > 0 && (
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'line-through' }}>
+                        ${formatPrecio(precioTotal)}
+                      </div>
+                    )}
+                    <div className="bk-price-num">${formatPrecio(precioFinal)}</div>
                     <div className="bk-price-unit">total · {nights} noche{nights !== 1 ? 's' : ''}</div>
                   </div>
                   <button
@@ -635,10 +734,25 @@ export default function HotelReservasPage() {
                     </div>
                   </div>
 
+                  {/* Descuento (si aplica) */}
+                  {descuento > 0 && (
+                    <div className="bk-confirm-section">
+                      <div className="bk-confirm-title">Precio</div>
+                      <div className="bk-confirm-row">
+                        <span>Subtotal</span>
+                        <strong>${formatPrecio(precioTotal)}</strong>
+                      </div>
+                      <div className="bk-confirm-row" style={{ color: '#16a34a' }}>
+                        <span>Descuento ({cupon.code})</span>
+                        <strong>-${formatPrecio(descuento)}</strong>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Total */}
                   <div className="bk-confirm-total">
                     <span>Total a pagar</span>
-                    <span className="bk-confirm-total-num">${formatPrecio(precioTotal)}</span>
+                    <span className="bk-confirm-total-num">${formatPrecio(precioFinal)}</span>
                   </div>
                 </div>
 
@@ -658,7 +772,7 @@ export default function HotelReservasPage() {
                       onClick={confirmReservation}
                       disabled={loadingPago}
                     >
-                      {loadingPago ? 'Procesando...' : '🔒 Pagar con MercadoPago'}
+                      {loadingPago ? 'Procesando...' : '🔒 Pagar'}
                     </button>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.4 }}>
@@ -738,7 +852,7 @@ function RoomCard({ room, nights, onReserve }) {
       {/* Precio */}
       <div className="hrc-price">
         <div className="hrc-price-group">
-          {room.precioPromocion && (
+          {!!room.precioPromocion && (
             <div className="hrc-price-was">${formatPrecio(room.precio)}</div>
           )}
           <div className="hrc-price-main">${formatPrecio(precio)}</div>

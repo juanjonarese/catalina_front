@@ -5,7 +5,7 @@ const breadcrumbMap = {
   "/admin/habitaciones": "Gestión de Habitaciones",
   "/admin/reservas":     "Gestión de Reservas",
   "/admin/dashboard":    "Dashboard",
-  "/admin/clientes":     "Clientes",
+  "/admin/clientes":     "Pasajeros",
   "/admin/cupones":      "Cupones",
   "/admin/tarifas":      "Tarifas",
   "/admin/reportes":     "Reportes",
@@ -73,7 +73,7 @@ const AdminLayout = () => {
             className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
             to="/admin/clientes"
           >
-            <span className="nav-icon">👥</span> Clientes
+            <span className="nav-icon">👥</span> Pasajeros
           </NavLink>
 
           <div className="nav-section-label">Configuración</div>

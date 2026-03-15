@@ -255,12 +255,12 @@ export default function GestionClientesScreen() {
       <div className="page-header">
         <div className="page-header-left">
           <div className="page-eyebrow">Gestión</div>
-          <h1 className="page-title">Clientes</h1>
+          <h1 className="page-title">Pasajeros</h1>
           <p className="page-subtitle">Fichas completas, historial de estadías y pagos registrados</p>
         </div>
         <div className="page-actions">
           <button className="btn btn-secondary" onClick={cargar} disabled={loading}>↻ Actualizar</button>
-          <button className="btn btn-primary"   onClick={openAdd}>＋ Nuevo cliente</button>
+          <button className="btn btn-primary"   onClick={openAdd}>＋ Nuevo pasajero</button>
         </div>
       </div>
 
@@ -268,7 +268,7 @@ export default function GestionClientesScreen() {
       <div className="stats-strip">
         <div className="stat-card">
           <div className="stat-icon" style={{ background: "var(--brand-light,#4A7C59)", color: "white" }}>👥</div>
-          <div className="stat-info"><div className="stat-num">{stats.total}</div><div className="stat-label">Total clientes</div></div>
+          <div className="stat-info"><div className="stat-num">{stats.total}</div><div className="stat-label">Total pasajeros</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: "rgba(74,124,89,.12)", color: "var(--green,#4A7C59)" }}>🏨</div>
@@ -276,7 +276,7 @@ export default function GestionClientesScreen() {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: "rgba(200,136,42,.12)", color: "var(--amber,#C8882A)" }}>⭐</div>
-          <div className="stat-info"><div className="stat-num">{stats.vip}</div><div className="stat-label">Clientes VIP</div></div>
+          <div className="stat-info"><div className="stat-num">{stats.vip}</div><div className="stat-label">Pasajeros VIP</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: "rgba(192,57,43,.12)", color: "var(--red,#C0392B)" }}>💳</div>
@@ -303,18 +303,18 @@ export default function GestionClientesScreen() {
             >{lbl}</button>
           ))}
         </div>
-        <div className="cl-count">{lista.length} cliente{lista.length !== 1 ? "s" : ""}</div>
+        <div className="cl-count">{lista.length} pasajero{lista.length !== 1 ? "s" : ""}</div>
       </div>
 
       {/* LISTA */}
       {loading ? (
-        <div className="empty-state"><div className="empty-icon">⏳</div><div className="empty-title">Cargando clientes…</div></div>
+        <div className="empty-state"><div className="empty-icon">⏳</div><div className="empty-title">Cargando pasajeros…</div></div>
       ) : lista.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">👥</div>
-          <div className="empty-title">Sin clientes</div>
-          <div className="empty-text">Agregá tu primer cliente o ajustá el filtro.</div>
-          <button className="btn btn-primary" onClick={openAdd}>＋ Nuevo cliente</button>
+          <div className="empty-title">Sin pasajeros</div>
+          <div className="empty-text">Agregá tu primer pasajero o ajustá el filtro.</div>
+          <button className="btn btn-primary" onClick={openAdd}>＋ Nuevo pasajero</button>
         </div>
       ) : lista.map((c, idx) => {
         const isOpen   = openCards.has(c._id);
@@ -389,7 +389,7 @@ export default function GestionClientesScreen() {
                       ["Dirección", c.address || "—"],
                       ["Ciudad", c.city || "—"],
                       ["Provincia", c.province || "—"],
-                      ["Cliente desde", fmtDate(c.createdAt)],
+                      ["Pasajero desde", fmtDate(c.createdAt)],
                       ["Categoría", c.vip ? "⭐ VIP" : "Regular"],
                     ].map(([label, val]) => (
                       <div key={label} className="cl-info-item">
@@ -480,8 +480,8 @@ export default function GestionClientesScreen() {
           <div className="modal" style={{ maxWidth: 660 }}>
             <div className="modal-header">
               <div className="modal-title-group">
-                <div className="modal-eyebrow">{editingId ? "Editar cliente" : "Nuevo cliente"}</div>
-                <div className="modal-title">{editingId ? `${form.firstName} ${form.lastName}` : "Registrar Cliente"}</div>
+                <div className="modal-eyebrow">{editingId ? "Editar pasajero" : "Nuevo pasajero"}</div>
+                <div className="modal-title">{editingId ? `${form.firstName} ${form.lastName}` : "Registrar Pasajero"}</div>
               </div>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
@@ -555,7 +555,7 @@ export default function GestionClientesScreen() {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
               <button className="btn btn-primary" onClick={saveCliente} disabled={saving}>
-                {saving ? "Guardando…" : "Guardar cliente"}
+                {saving ? "Guardando…" : "Guardar pasajero"}
               </button>
             </div>
           </div>
@@ -669,7 +669,7 @@ export default function GestionClientesScreen() {
           <div className="modal modal-sm">
             <div style={{ padding: "28px 24px", textAlign: "center" }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🗑</div>
-              <div style={{ fontSize: 20, color: "var(--text-1)", marginBottom: 8, fontWeight: 700 }}>¿Eliminar cliente?</div>
+              <div style={{ fontSize: 20, color: "var(--text-1)", marginBottom: 8, fontWeight: 700 }}>¿Eliminar pasajero?</div>
               <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.5 }}>
                 Se eliminará <strong>{delTarget ? fullName(delTarget) : ""}</strong> y todos sus pagos registrados.
               </p>

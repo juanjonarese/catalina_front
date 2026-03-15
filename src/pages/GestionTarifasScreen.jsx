@@ -222,13 +222,12 @@ export default function GestionTarifasScreen() {
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const sea = getSeasonForDate(temporadas, iso);
-      const meta = sea ? COLOR_META[sea.color] : null;
       const isToday = iso === today;
+      const seasonClass = sea ? ` season-${sea.color}` : "";
       cells.push(
         <div
           key={d}
-          className={`mini-cal-cell${isToday ? " today" : ""}`}
-          style={meta ? { background: meta.hex + "22", color: meta.hex, borderColor: isToday ? meta.hex : undefined } : {}}
+          className={`mini-cal-cell${isToday ? " today" : ""}${seasonClass}`}
           title={sea ? sea.nombre : ""}
         >{d}</div>
       );

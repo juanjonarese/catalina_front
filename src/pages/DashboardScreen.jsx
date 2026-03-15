@@ -384,7 +384,7 @@ export default function DashboardScreen() {
                 { icon:"📋", label:"Ver Reservas",   to:"/admin/reservas" },
                 { icon:"🛏",  label:"Habitaciones",   to:"/admin/habitaciones" },
                 { icon:"🎫", label:"Cupones",         to:"/admin/cupones" },
-                { icon:"🌐", label:"Ver sitio web",   to:"/" },
+                { icon:"👥", label:"Pasajeros",        to:"/admin/clientes" },
               ].map(({ icon, label, to }) => (
                 <Link key={label} to={to} style={s.qaBtn}>
                   <span style={{ fontSize:22 }}>{icon}</span>
