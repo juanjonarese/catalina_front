@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { getUsuarioActual, esSuperadmin } from "../helpers/authHelper";
 import "../css/hotel-system.css";
 
 const breadcrumbMap = {
@@ -9,12 +10,15 @@ const breadcrumbMap = {
   "/admin/cupones":      "Cupones",
   "/admin/tarifas":      "Tarifas",
   "/admin/reportes":     "Reportes",
+  "/admin/caja":         "Caja por Turno",
+  "/admin/usuarios":     "Gestión de Usuarios",
 };
 
 const AdminLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const currentPage = breadcrumbMap[pathname] || "Admin";
+  const usuario = getUsuarioActual();
 
   // Protección de ruta — redirige a /login si no hay token
   const token = localStorage.getItem("adminToken");
@@ -49,7 +53,9 @@ const AdminLayout = () => {
           >
             Salir
           </button>
-          <div className="topbar-avatar" title="Mi cuenta">HC</div>
+          <div className="topbar-avatar" title={usuario?.nombre || "Mi cuenta"} style={{ fontSize: 11 }}>
+            {usuario?.nombre ? usuario.nombre.split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase() : 'HC'}
+          </div>
         </div>
       </header>
 
@@ -74,6 +80,12 @@ const AdminLayout = () => {
             to="/admin/clientes"
           >
             <span className="nav-icon">👥</span> Pasajeros
+          </NavLink>
+          <NavLink
+            className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+            to="/admin/caja"
+          >
+            <span className="nav-icon">💵</span> Caja / Turno
           </NavLink>
 
           <div className="nav-section-label">Configuración</div>
@@ -103,6 +115,18 @@ const AdminLayout = () => {
           >
             <span className="nav-icon">📊</span> Reportes
           </NavLink>
+
+          {esSuperadmin() && (
+            <>
+              <div className="nav-section-label">Administración</div>
+              <NavLink
+                className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+                to="/admin/usuarios"
+              >
+                <span className="nav-icon">🔑</span> Usuarios
+              </NavLink>
+            </>
+          )}
 
           <div className="nav-section-label">Sistema</div>
           <NavLink className="nav-item" to="/">

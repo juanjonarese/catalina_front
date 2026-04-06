@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import clientAxios from "../helpers/clientAxios";
+import ModalAperturaTurno from "../components/ModalAperturaTurno";
 import "../css/hotel-system.css";
 
 export default function LoginScreen() {
@@ -11,6 +12,8 @@ export default function LoginScreen() {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showModalApertura, setShowModalApertura] = useState(false);
+  const [nombreLogueado, setNombreLogueado] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +28,13 @@ export default function LoginScreen() {
     try {
       const { data } = await clientAxios.post("/auth/login", { email, password });
       localStorage.setItem("adminToken", data.token);
-      navigate("/admin/dashboard");
+      // Superadmin no gestiona turnos, entra directo
+      if (data.rol === "superadmin") {
+        navigate("/admin/dashboard");
+        return;
+      }
+      setNombreLogueado(data.nombre);
+      setShowModalApertura(true);
     } catch (err) {
       setError(err.response?.data?.msg || "Error al iniciar sesión. Verificá tus datos.");
     } finally {
@@ -33,8 +42,18 @@ export default function LoginScreen() {
     }
   };
 
+  const handleTurnoAbierto = () => {
+    setShowModalApertura(false);
+    navigate("/admin/dashboard");
+  };
+
   return (
     <div className="page" data-theme={theme}>
+      <ModalAperturaTurno
+        show={showModalApertura}
+        nombre={nombreLogueado}
+        onTurnoAbierto={handleTurnoAbierto}
+      />
 
       {/* ── PANEL VISUAL (izquierda) ────────────────────────── */}
       <div className="panel-visual" aria-hidden="true">

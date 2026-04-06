@@ -11,6 +11,8 @@ import GestionCuponesScreen from "../pages/GestionCuponesScreen";
 import GestionReportesScreen from "../pages/GestionReportesScreen";
 import RegistroPasajerosScreen from "../pages/RegistroPasajerosScreen";
 import RespuestaPagoScreen from "../pages/RespuestaPagoScreen";
+import CajaTurnoScreen from "../pages/CajaTurnoScreen";
+import GestionUsuariosScreen from "../pages/GestionUsuariosScreen";
 
 const PrincipalRoutes = () => {
   return (
@@ -37,6 +39,8 @@ const PrincipalRoutes = () => {
         <Route path="tarifas"  element={<GestionTarifasScreen />} />
         <Route path="cupones"   element={<GestionCuponesScreen />} />
         <Route path="reportes" element={<GestionReportesScreen />} />
+        <Route path="caja" element={<CajaTurnoScreen />} />
+        <Route path="usuarios" element={<GestionUsuariosScreen />} />
       </Route>
     </Routes>
   );
