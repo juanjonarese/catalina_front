@@ -107,6 +107,14 @@ const AdminLayout = () => {
           >
             <span className="nav-icon">🎁</span> Cupones
           </NavLink>
+          {esSuperadmin() && (
+            <NavLink
+              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+              to="/admin/usuarios"
+            >
+              <span className="nav-icon">🔑</span> Usuarios
+            </NavLink>
+          )}
 
           <div className="nav-section-label">Reportes</div>
           <NavLink
@@ -115,18 +123,6 @@ const AdminLayout = () => {
           >
             <span className="nav-icon">📊</span> Reportes
           </NavLink>
-
-          {esSuperadmin() && (
-            <>
-              <div className="nav-section-label">Administración</div>
-              <NavLink
-                className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
-                to="/admin/usuarios"
-              >
-                <span className="nav-icon">🔑</span> Usuarios
-              </NavLink>
-            </>
-          )}
 
           <div className="nav-section-label">Sistema</div>
           <NavLink className="nav-item" to="/">
