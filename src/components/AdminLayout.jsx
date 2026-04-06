@@ -1,5 +1,8 @@
 import { NavLink, Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { useState } from "react";
 import { getUsuarioActual, esSuperadmin } from "../helpers/authHelper";
+import ModalCierreCaja from "./ModalCierreCaja";
+import clientAxios from "../helpers/clientAxios";
 import "../css/hotel-system.css";
 
 const breadcrumbMap = {
@@ -20,13 +23,30 @@ const AdminLayout = () => {
   const currentPage = breadcrumbMap[pathname] || "Admin";
   const usuario = getUsuarioActual();
 
+  const [turnoAbierto, setTurnoAbierto] = useState(null);
+  const [showCierreCaja, setShowCierreCaja] = useState(false);
+
   // Protección de ruta — redirige a /login si no hay token
   const token = localStorage.getItem("adminToken");
   if (!token) return <Navigate to="/login" replace />;
 
-  const handleLogout = () => {
+  const cerrarSesion = () => {
     localStorage.removeItem("adminToken");
     navigate("/login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { data } = await clientAxios.get("/turnos/actual");
+      if (data.turno) {
+        setTurnoAbierto(data.turno);
+        setShowCierreCaja(true);
+        return;
+      }
+    } catch {
+      // Si falla la consulta, cierra sesión directamente
+    }
+    cerrarSesion();
   };
 
   return (
@@ -137,6 +157,13 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      <ModalCierreCaja
+        show={showCierreCaja}
+        onHide={() => setShowCierreCaja(false)}
+        turno={turnoAbierto}
+        onCierreCaja={cerrarSesion}
+      />
     </div>
   );
 };
