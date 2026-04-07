@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import clientAxios from "../helpers/clientAxios";
 import TablaReservas from "../components/TablaReservas";
@@ -7,6 +8,7 @@ import ModalCheckOut from "../components/ModalCheckOut";
 import CalendarioDisponibilidad from "../components/CalendarioDisponibilidad";
 
 const GestionReservasScreen = () => {
+  const navigate = useNavigate();
   const [reservas, setReservas] = useState([]);
   const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -56,21 +58,8 @@ const GestionReservasScreen = () => {
     }
   };
 
-  const handleCheckIn = async (id) => {
-    const result = await Swal.fire({
-      title: "¿Realizar Check-In?", text: "Confirmar entrada del huésped",
-      icon: "question", showCancelButton: true,
-      confirmButtonColor: "#4A7C59", cancelButtonColor: "#948A7C",
-      confirmButtonText: "Sí, check-in", cancelButtonText: "Cancelar",
-    });
-    if (!result.isConfirmed) return;
-    try {
-      await clientAxios.put(`/reservas/${id}/estado`, { estado: "confirmada" });
-      Swal.fire({ icon: "success", title: "Check-In Realizado", timer: 2000 });
-      cargarReservas();
-    } catch (error) {
-      Swal.fire({ icon: "error", title: "Error", text: "Error al realizar check-in" });
-    }
+  const handleCheckIn = (id) => {
+    navigate(`/admin/checkin/${id}`);
   };
 
   const handleCheckOut = (reserva) => { setReservaCheckOut(reserva); setShowModalCheckOut(true); };

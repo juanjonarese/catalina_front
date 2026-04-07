@@ -13,6 +13,7 @@ import RegistroPasajerosScreen from "../pages/RegistroPasajerosScreen";
 import RespuestaPagoScreen from "../pages/RespuestaPagoScreen";
 import CajaTurnoScreen from "../pages/CajaTurnoScreen";
 import GestionUsuariosScreen from "../pages/GestionUsuariosScreen";
+import CheckInScreen from "../pages/CheckInScreen";
 
 const PrincipalRoutes = () => {
   return (
@@ -41,6 +42,7 @@ const PrincipalRoutes = () => {
         <Route path="reportes" element={<GestionReportesScreen />} />
         <Route path="caja" element={<CajaTurnoScreen />} />
         <Route path="usuarios" element={<GestionUsuariosScreen />} />
+        <Route path="checkin/:reservaId" element={<CheckInScreen />} />
       </Route>
     </Routes>
   );

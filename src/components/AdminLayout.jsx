@@ -15,6 +15,7 @@ const breadcrumbMap = {
   "/admin/reportes":     "Reportes",
   "/admin/caja":         "Caja por Turno",
   "/admin/usuarios":     "Gestión de Usuarios",
+  "/admin/checkin":      "Check-In",
 };
 
 const AdminLayout = () => {
