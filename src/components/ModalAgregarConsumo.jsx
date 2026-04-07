@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Badge } from 'react-bootstrap';
+import { Modal, Button, Form, Table } from 'react-bootstrap';
 import clientAxios from '../helpers/clientAxios';
 import Swal from 'sweetalert2';
 
-const ModalAgregarConsumo = ({ show, onHide, pasajero, turnoId, onConsumoAgregado }) => {
+const ModalAgregarConsumo = ({ show, onHide, habitacion, turnoId, onConsumoAgregado }) => {
   const [consumos, setConsumos] = useState([]);
   const [descripcion, setDescripcion] = useState('');
   const [monto, setMonto] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (show && pasajero) {
-      cargarConsumos();
-    }
-  }, [show, pasajero]);
+    if (show && habitacion) cargarConsumos();
+  }, [show, habitacion]);
 
   const cargarConsumos = async () => {
     try {
-      const { data } = await clientAxios.get(`/consumos/pasajero/${pasajero._id}`);
+      const { data } = await clientAxios.get(`/consumos/habitacion/${habitacion}`);
       setConsumos(data);
     } catch (error) {
       console.error('Error al cargar consumos:', error);
@@ -31,8 +29,7 @@ const ModalAgregarConsumo = ({ show, onHide, pasajero, turnoId, onConsumoAgregad
     setLoading(true);
     try {
       await clientAxios.post('/consumos', {
-        pasajeroId: pasajero._id,
-        reservaId: pasajero.reservaId || null,
+        habitacion,
         turnoId: turnoId || null,
         descripcion: descripcion.trim(),
         monto: Number(Number(monto).toFixed(2)),
@@ -76,12 +73,10 @@ const ModalAgregarConsumo = ({ show, onHide, pasajero, turnoId, onConsumoAgregad
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton>
         <Modal.Title>
-          Consumos — {pasajero?.nombre}
-          <small className="text-muted ms-2" style={{ fontSize: '0.8rem' }}>Hab. {pasajero?.habitacion}</small>
+          Consumos — Habitación {habitacion}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* Formulario para agregar */}
         <Form onSubmit={handleAgregar} className="mb-4">
           <div className="d-flex gap-2 align-items-end">
             <Form.Group style={{ flex: 2 }}>
@@ -112,16 +107,15 @@ const ModalAgregarConsumo = ({ show, onHide, pasajero, turnoId, onConsumoAgregad
           </div>
         </Form>
 
-        {/* Lista de consumos */}
         {consumos.length === 0 ? (
-          <p className="text-muted text-center py-3">Sin consumos registrados</p>
+          <p className="text-muted text-center py-3">Sin consumos registrados para esta habitación</p>
         ) : (
           <Table size="sm" bordered>
             <thead className="table-light">
               <tr>
                 <th>Descripción</th>
-                <th className="text-end" style={{ width: '120px' }}>Monto</th>
-                <th style={{ width: '80px' }}></th>
+                <th className="text-end" style={{ width: '130px' }}>Monto</th>
+                <th style={{ width: '60px' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -130,13 +124,7 @@ const ModalAgregarConsumo = ({ show, onHide, pasajero, turnoId, onConsumoAgregad
                   <td>{c.descripcion}</td>
                   <td className="text-end">${c.monto.toFixed(2)}</td>
                   <td className="text-center">
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleEliminar(c._id)}
-                    >
-                      ✕
-                    </Button>
+                    <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(c._id)}>✕</Button>
                   </td>
                 </tr>
               ))}

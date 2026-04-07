@@ -7,21 +7,19 @@ import ModalCobro from '../components/ModalCobro';
 import ModalCierreCaja from '../components/ModalCierreCaja';
 
 const CajaTurnoScreen = () => {
-  const [turnoActual, setTurnoActual] = useState(null);
-  const [pasajerosActivos, setPasajerosActivos] = useState([]);
-  const [consumosPorPasajero, setConsumosPorPasajero] = useState({});
-  const [loadingTurno, setLoadingTurno] = useState(true);
+  const [turnoActual, setTurnoActual]         = useState(null);
+  const [habitaciones, setHabitaciones]       = useState([]); // [{ numero, pasajeros, consumos }]
+  const [loadingTurno, setLoadingTurno]       = useState(true);
 
-  // Modales
   const [modalAbrirTurno, setModalAbrirTurno] = useState(false);
-  const [nombreEmpleado, setNombreEmpleado] = useState('');
-  const [modalConsumo, setModalConsumo] = useState({ show: false, pasajero: null });
-  const [modalCobro, setModalCobro] = useState({ show: false, pasajero: null });
-  const [modalCierre, setModalCierre] = useState(false);
+  const [nombreEmpleado, setNombreEmpleado]   = useState('');
+  const [modalConsumo, setModalConsumo]       = useState({ show: false, habitacion: null });
+  const [modalCobro, setModalCobro]           = useState({ show: false, habitacion: null });
+  const [modalCierre, setModalCierre]         = useState(false);
 
   useEffect(() => {
     cargarTurnoActual();
-    cargarPasajerosActivos();
+    cargarHabitaciones();
   }, []);
 
   const cargarTurnoActual = async () => {
@@ -36,28 +34,38 @@ const CajaTurnoScreen = () => {
     }
   };
 
-  const cargarPasajerosActivos = async () => {
+  const cargarHabitaciones = async () => {
     try {
-      const { data } = await clientAxios.get('/pasajeros');
-      // Filtrar solo los activos (activo: true o campo no presente = true por defecto)
-      const activos = data.filter((p) => p.activo !== false);
-      setPasajerosActivos(activos);
+      // Traer todos los pasajeros activos
+      const { data: pasajeros } = await clientAxios.get('/pasajeros');
+      const activos = pasajeros.filter((p) => p.activo !== false);
 
-      // Cargar consumos en paralelo para mostrar el contador en la tabla
-      const consumosMap = {};
+      // Agrupar por habitación
+      const mapa = {};
+      activos.forEach((p) => {
+        if (!mapa[p.habitacion]) mapa[p.habitacion] = { numero: p.habitacion, pasajeros: [], consumos: [] };
+        mapa[p.habitacion].pasajeros.push(p);
+      });
+
+      // Cargar consumos por habitación en paralelo
       await Promise.all(
-        activos.map(async (p) => {
+        Object.keys(mapa).map(async (hab) => {
           try {
-            const res = await clientAxios.get(`/consumos/pasajero/${p._id}`);
-            consumosMap[p._id] = res.data;
+            const { data } = await clientAxios.get(`/consumos/habitacion/${hab}`);
+            mapa[hab].consumos = data;
           } catch {
-            consumosMap[p._id] = [];
+            mapa[hab].consumos = [];
           }
         })
       );
-      setConsumosPorPasajero(consumosMap);
+
+      // Ordenar habitaciones por número
+      const lista = Object.values(mapa).sort((a, b) =>
+        a.numero.toString().localeCompare(b.numero.toString(), undefined, { numeric: true })
+      );
+      setHabitaciones(lista);
     } catch (error) {
-      console.error('Error al cargar pasajeros:', error);
+      console.error('Error al cargar habitaciones:', error);
     }
   };
 
@@ -76,17 +84,9 @@ const CajaTurnoScreen = () => {
     }
   };
 
-  const handleConsumoAgregado = () => {
-    cargarPasajerosActivos();
-  };
-
-  const handleCobrado = () => {
-    cargarPasajerosActivos();
-  };
-
   const handleCierreCaja = () => {
     setTurnoActual(null);
-    cargarPasajerosActivos();
+    cargarHabitaciones();
   };
 
   const formatFecha = (fecha) => {
@@ -97,11 +97,6 @@ const CajaTurnoScreen = () => {
     });
   };
 
-  const totalConsumoPasajero = (pasajeroId) => {
-    const consumos = consumosPorPasajero[pasajeroId] || [];
-    return consumos.reduce((sum, c) => sum + c.monto, 0);
-  };
-
   return (
     <Container fluid className="py-4">
       {/* Header */}
@@ -110,15 +105,13 @@ const CajaTurnoScreen = () => {
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <h1 className="mb-0">Caja por Turno</h1>
-              <small className="text-muted">Gestión de egresos y cobros</small>
+              <small className="text-muted">Consumos y cobros por habitación</small>
             </div>
             {!loadingTurno && (
               turnoActual ? (
-                <div className="d-flex gap-2">
-                  <Button variant="outline-danger" onClick={() => setModalCierre(true)}>
-                    Cerrar Caja
-                  </Button>
-                </div>
+                <Button variant="outline-danger" onClick={() => setModalCierre(true)}>
+                  Cerrar Caja
+                </Button>
               ) : (
                 <Button variant="success" size="lg" onClick={() => setModalAbrirTurno(true)}>
                   Abrir Turno
@@ -137,12 +130,8 @@ const CajaTurnoScreen = () => {
           <Card.Body className="py-2">
             <div className="d-flex align-items-center gap-3">
               <Badge bg="success" style={{ fontSize: '0.85rem' }}>Turno abierto</Badge>
-              <span>
-                <strong>Empleado:</strong> {turnoActual.empleado}
-              </span>
-              <span className="text-muted">
-                <strong>Desde:</strong> {formatFecha(turnoActual.fechaApertura)}
-              </span>
+              <span><strong>Empleado:</strong> {turnoActual.empleado}</span>
+              <span className="text-muted"><strong>Desde:</strong> {formatFecha(turnoActual.fechaApertura)}</span>
             </div>
           </Card.Body>
         </Card>
@@ -152,15 +141,15 @@ const CajaTurnoScreen = () => {
         </Alert>
       )}
 
-      {/* Tabla de pasajeros activos */}
+      {/* Tabla de habitaciones ocupadas */}
       <Row>
         <Col>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <h5 className="mb-0">
-              Pasajeros activos
-              <Badge bg="secondary" className="ms-2">{pasajerosActivos.length}</Badge>
+              Habitaciones ocupadas
+              <Badge bg="secondary" className="ms-2">{habitaciones.length}</Badge>
             </h5>
-            <Button variant="outline-secondary" size="sm" onClick={cargarPasajerosActivos}>
+            <Button variant="outline-secondary" size="sm" onClick={cargarHabitaciones}>
               Actualizar
             </Button>
           </div>
@@ -169,10 +158,8 @@ const CajaTurnoScreen = () => {
             <Table striped bordered hover className="mb-0">
               <thead className="table-dark">
                 <tr>
-                  <th style={{ width: 40 }}>#</th>
-                  <th>Pasajero</th>
-                  <th>DNI</th>
-                  <th>Hab.</th>
+                  <th style={{ width: 80 }}>Hab.</th>
+                  <th>Pasajeros</th>
                   <th>Check-in</th>
                   <th>Check-out</th>
                   <th className="text-end">Consumos</th>
@@ -180,30 +167,32 @@ const CajaTurnoScreen = () => {
                 </tr>
               </thead>
               <tbody>
-                {pasajerosActivos.length === 0 ? (
+                {habitaciones.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-5 text-muted">
-                      No hay pasajeros activos en este momento.
+                    <td colSpan="6" className="text-center py-5 text-muted">
+                      No hay habitaciones ocupadas en este momento.
                     </td>
                   </tr>
                 ) : (
-                  pasajerosActivos.map((p, i) => {
-                    const totalConsumos = totalConsumoPasajero(p._id);
-                    const cantConsumos = (consumosPorPasajero[p._id] || []).length;
+                  habitaciones.map((hab) => {
+                    const totalConsumos = hab.consumos.reduce((s, c) => s + c.monto, 0);
+                    const ref = hab.pasajeros[0];
                     return (
-                      <tr key={p._id}>
-                        <td className="text-center">{i + 1}</td>
-                        <td className="fw-semibold">{p.nombre}</td>
-                        <td>{p.dni}</td>
+                      <tr key={hab.numero}>
                         <td className="text-center">
-                          <Badge bg="info">{p.habitacion}</Badge>
+                          <Badge bg="info" style={{ fontSize: '0.9rem' }}>{hab.numero}</Badge>
                         </td>
-                        <td>{new Date(p.checkin).toLocaleDateString('es-AR')}</td>
-                        <td>{new Date(p.checkout).toLocaleDateString('es-AR')}</td>
+                        <td>
+                          {hab.pasajeros.map((p) => (
+                            <div key={p._id} className="small">{p.nombre}</div>
+                          ))}
+                        </td>
+                        <td className="small">{ref ? new Date(ref.checkin).toLocaleDateString('es-AR') : '-'}</td>
+                        <td className="small">{ref ? new Date(ref.checkout).toLocaleDateString('es-AR') : '-'}</td>
                         <td className="text-end">
-                          {cantConsumos > 0 ? (
+                          {hab.consumos.length > 0 ? (
                             <span>
-                              <Badge bg="warning" text="dark" className="me-1">{cantConsumos}</Badge>
+                              <Badge bg="warning" text="dark" className="me-1">{hab.consumos.length}</Badge>
                               <strong>${totalConsumos.toFixed(2)}</strong>
                             </span>
                           ) : (
@@ -215,8 +204,7 @@ const CajaTurnoScreen = () => {
                             <Button
                               variant="outline-primary"
                               size="sm"
-                              onClick={() => setModalConsumo({ show: true, pasajero: p })}
-                              title="Agregar/ver consumos"
+                              onClick={() => setModalConsumo({ show: true, habitacion: hab.numero })}
                             >
                               Consumos
                             </Button>
@@ -224,9 +212,7 @@ const CajaTurnoScreen = () => {
                               variant={turnoActual ? 'success' : 'outline-secondary'}
                               size="sm"
                               disabled={!turnoActual}
-                              onClick={() => {
-                                if (turnoActual) setModalCobro({ show: true, pasajero: p });
-                              }}
+                              onClick={() => turnoActual && setModalCobro({ show: true, habitacion: hab.numero })}
                               title={turnoActual ? 'Cobrar y dar de egreso' : 'Debe haber un turno abierto'}
                             >
                               Cobrar
@@ -269,22 +255,22 @@ const CajaTurnoScreen = () => {
         </Form>
       </Modal>
 
-      {/* Modal consumos */}
+      {/* Modal consumos por habitación */}
       <ModalAgregarConsumo
         show={modalConsumo.show}
-        onHide={() => setModalConsumo({ show: false, pasajero: null })}
-        pasajero={modalConsumo.pasajero}
+        onHide={() => setModalConsumo({ show: false, habitacion: null })}
+        habitacion={modalConsumo.habitacion}
         turnoId={turnoActual?._id}
-        onConsumoAgregado={handleConsumoAgregado}
+        onConsumoAgregado={cargarHabitaciones}
       />
 
-      {/* Modal cobro */}
+      {/* Modal cobro por habitación */}
       <ModalCobro
         show={modalCobro.show}
-        onHide={() => setModalCobro({ show: false, pasajero: null })}
-        pasajero={modalCobro.pasajero}
+        onHide={() => setModalCobro({ show: false, habitacion: null })}
+        habitacion={modalCobro.habitacion}
         turnoId={turnoActual?._id}
-        onCobrado={handleCobrado}
+        onCobrado={cargarHabitaciones}
       />
 
       {/* Modal cierre de caja */}

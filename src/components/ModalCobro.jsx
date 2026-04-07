@@ -4,28 +4,26 @@ import clientAxios from '../helpers/clientAxios';
 import Swal from 'sweetalert2';
 
 const METODOS_PAGO = [
-  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'efectivo',      label: 'Efectivo' },
   { value: 'transferencia', label: 'Transferencia' },
-  { value: 'mercadopago', label: 'MercadoPago' },
-  { value: 'otro', label: 'Otro' },
+  { value: 'mercadopago',   label: 'MercadoPago' },
+  { value: 'otro',          label: 'Otro' },
 ];
 
-const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
-  const [cuenta, setCuenta] = useState(null);
+const ModalCobro = ({ show, onHide, habitacion, turnoId, onCobrado }) => {
+  const [cuenta, setCuenta]       = useState(null);
   const [metodoPago, setMetodoPago] = useState('efectivo');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]     = useState(false);
   const [procesando, setProcesando] = useState(false);
 
   useEffect(() => {
-    if (show && pasajero) {
-      cargarCuenta();
-    }
-  }, [show, pasajero]);
+    if (show && habitacion) cargarCuenta();
+  }, [show, habitacion]);
 
   const cargarCuenta = async () => {
     setLoading(true);
     try {
-      const { data } = await clientAxios.get(`/cobros/cuenta/${pasajero._id}`);
+      const { data } = await clientAxios.get(`/cobros/cuenta/habitacion/${habitacion}`);
       setCuenta(data);
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar el estado de cuenta' });
@@ -42,10 +40,10 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
     const saldo = cuenta.saldoPendiente;
 
     const confirm = await Swal.fire({
-      title: '¿Confirmar cobro?',
+      title: '¿Confirmar checkout?',
       html: saldo > 0
         ? `Se cobrarán <strong>$${saldo.toFixed(2)}</strong> por <strong>${metodoLabel}</strong>`
-        : 'El pasajero no tiene saldo pendiente. Se registrará el egreso sin cobro.',
+        : 'Sin saldo pendiente. Se registrará el egreso de la habitación.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
@@ -56,11 +54,11 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
     setProcesando(true);
     try {
       await clientAxios.post('/cobros', {
-        pasajeroId: cuenta.pasajero._id,
+        habitacion: cuenta.habitacion,
+        pasajeroId: cuenta.pasajeroRef?._id || null,
         reservaId: cuenta.reserva?._id || null,
         turnoId,
-        nombrePasajero: cuenta.pasajero.nombre,
-        habitacion: cuenta.pasajero.habitacion,
+        nombrePasajero: cuenta.pasajeros.map((p) => p.nombre).join(', '),
         noches: cuenta.noches,
         precioPorNoche: cuenta.precioPorNoche,
         totalNoches: cuenta.totalNoches,
@@ -74,8 +72,8 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
 
       Swal.fire({
         icon: 'success',
-        title: 'Cobro registrado',
-        text: `${cuenta.pasajero.nombre} ha sido dado de egreso correctamente.`,
+        title: 'Checkout registrado',
+        text: `Habitación ${cuenta.habitacion} dada de egreso correctamente.`,
         timer: 2500,
         showConfirmButton: false,
       });
@@ -88,15 +86,14 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
     }
   };
 
-  const formatFecha = (fecha) => {
-    if (!fecha) return '-';
-    return new Date(fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
+  const fmt = (fecha) => fecha
+    ? new Date(fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '-';
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton className="bg-dark text-white">
-        <Modal.Title>Estado de Cuenta — Cobro al Egreso</Modal.Title>
+        <Modal.Title>Checkout — Habitación {habitacion}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {loading ? (
@@ -106,34 +103,32 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
           </div>
         ) : cuenta ? (
           <>
-            {/* Datos del pasajero */}
+            {/* Pasajeros de la habitación */}
             <div className="bg-light rounded p-3 mb-3">
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <h5 className="mb-1">{cuenta.pasajero.nombre}</h5>
-                  <small className="text-muted">
-                    DNI {cuenta.pasajero.dni} · Hab. <strong>{cuenta.pasajero.habitacion}</strong>
-                  </small>
+                  <div className="fw-bold mb-1">
+                    <Badge bg="info" className="me-2">Hab. {cuenta.habitacion}</Badge>
+                    {cuenta.noches} noche{cuenta.noches !== 1 ? 's' : ''}
+                  </div>
+                  <div className="small text-muted">
+                    {cuenta.pasajeros.map((p) => p.nombre).join(' · ')}
+                  </div>
                 </div>
-                <div className="text-end">
-                  <div className="small text-muted">Check-in: {formatFecha(cuenta.pasajero.checkin)}</div>
-                  <div className="small text-muted">Check-out: {formatFecha(cuenta.pasajero.checkout)}</div>
-                  <Badge bg="info" className="mt-1">{cuenta.noches} noche{cuenta.noches !== 1 ? 's' : ''}</Badge>
+                <div className="text-end small text-muted">
+                  <div>Check-in: {fmt(cuenta.pasajeroRef?.checkin)}</div>
+                  <div>Check-out: {fmt(cuenta.pasajeroRef?.checkout)}</div>
                 </div>
               </div>
             </div>
 
-            {/* Estado del pago de la reserva */}
+            {/* Estado del pago previo */}
             {cuenta.reserva && (
               <Alert variant={cuenta.pagadoPrevio > 0 ? 'success' : 'warning'} className="py-2">
-                {cuenta.pagadoPrevio > 0 ? (
-                  <>
-                    Reserva <strong>pagada online</strong> via MercadoPago —
-                    noches cubiertas por <strong>${cuenta.pagadoPrevio.toFixed(2)}</strong>
-                  </>
-                ) : (
-                  <>Reserva <strong>sin pago previo</strong> — el alojamiento debe cobrarse ahora</>
-                )}
+                {cuenta.pagadoPrevio > 0
+                  ? <>Reserva <strong>pagada online</strong> — noches cubiertas por <strong>${cuenta.pagadoPrevio.toFixed(2)}</strong></>
+                  : <>Reserva <strong>sin pago previo</strong> — el alojamiento debe cobrarse ahora</>
+                }
               </Alert>
             )}
 
@@ -142,25 +137,21 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
               <thead className="table-dark">
                 <tr>
                   <th>Concepto</th>
-                  <th className="text-end" style={{ width: '140px' }}>Importe</th>
+                  <th className="text-end" style={{ width: 140 }}>Importe</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Noches */}
                 {cuenta.totalNoches > 0 && (
                   <tr className={cuenta.pagadoPrevio > 0 ? 'text-muted' : ''}>
                     <td>
                       Alojamiento ({cuenta.noches} noche{cuenta.noches !== 1 ? 's' : ''}
                       {cuenta.precioPorNoche > 0 && ` × $${cuenta.precioPorNoche.toFixed(2)}`})
-                      {cuenta.pagadoPrevio > 0 && (
-                        <Badge bg="success" className="ms-2" style={{ fontSize: '0.7rem' }}>Pagado</Badge>
-                      )}
+                      {cuenta.pagadoPrevio > 0 && <Badge bg="success" className="ms-2" style={{ fontSize: '0.7rem' }}>Pagado</Badge>}
                     </td>
                     <td className="text-end">${cuenta.totalNoches.toFixed(2)}</td>
                   </tr>
                 )}
 
-                {/* Consumos */}
                 {cuenta.consumos.length > 0 ? (
                   cuenta.consumos.map((c, i) => (
                     <tr key={i}>
@@ -187,9 +178,7 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
                   </tr>
                 )}
                 <tr className={cuenta.saldoPendiente > 0 ? 'table-danger' : 'table-success'}>
-                  <td className="fw-bold">
-                    {cuenta.saldoPendiente > 0 ? 'Saldo a cobrar' : 'Sin saldo pendiente'}
-                  </td>
+                  <td className="fw-bold">{cuenta.saldoPendiente > 0 ? 'Saldo a cobrar' : 'Sin saldo pendiente'}</td>
                   <td className="text-end fw-bold">${cuenta.saldoPendiente.toFixed(2)}</td>
                 </tr>
               </tfoot>
@@ -217,15 +206,13 @@ const ModalCobro = ({ show, onHide, pasajero, turnoId, onCobrado }) => {
         ) : null}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide} disabled={procesando}>
-          Cancelar
-        </Button>
-        <Button
-          variant="success"
-          onClick={handleCobrar}
-          disabled={loading || procesando || !cuenta}
-        >
-          {procesando ? 'Procesando...' : cuenta?.saldoPendiente > 0 ? `Cobrar $${cuenta?.saldoPendiente?.toFixed(2)}` : 'Registrar Egreso'}
+        <Button variant="secondary" onClick={onHide} disabled={procesando}>Cancelar</Button>
+        <Button variant="success" onClick={handleCobrar} disabled={loading || procesando || !cuenta}>
+          {procesando
+            ? 'Procesando...'
+            : cuenta?.saldoPendiente > 0
+              ? `Cobrar $${cuenta?.saldoPendiente?.toFixed(2)}`
+              : 'Registrar Egreso'}
         </Button>
       </Modal.Footer>
     </Modal>
